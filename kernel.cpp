@@ -80,45 +80,16 @@ TShutdownMode CKernel::Run (void)
 {
 	m_Logger.Write (FromKernel, LogNotice, "Compile time: " __DATE__ " " __TIME__);
 
-	Game game(m_Logger, m_Screen);
+	Game game(m_Logger, m_Screen, m_DeviceNameService, m_USBHCI);
+	game.init();
 	game.run();
 
 	m_Timer.MsDelay (2000);
 
 	m_Logger.Write (FromKernel, LogNotice, "Please attach an USB keyboard, if not already done!");
 
-	for (unsigned nCount = 0; m_ShutdownMode == ShutdownNone; nCount++)
+	while (m_ShutdownMode == ShutdownNone)
 	{
-		// This must be called from TASK_LEVEL to update the tree of connected USB devices.
-		boolean bUpdated = m_USBHCI.UpdatePlugAndPlay ();
-
-		if (   bUpdated
-		    && m_pKeyboard == 0)
-		{
-			m_pKeyboard = (CUSBKeyboardDevice *) m_DeviceNameService.GetDevice ("ukbd1", FALSE);
-			if (m_pKeyboard != 0)
-			{
-				m_pKeyboard->RegisterRemovedHandler (KeyboardRemovedHandler);
-
-#if 1	// set to 0 to test raw mode
-				m_pKeyboard->RegisterShutdownHandler (ShutdownHandler);
-				m_pKeyboard->RegisterKeyPressedHandler (KeyPressedHandler);
-#else
-				m_pKeyboard->RegisterKeyStatusHandlerRaw (KeyStatusHandlerRaw);
-#endif
-
-				m_Logger.Write (FromKernel, LogNotice, "Just type something!");
-			}
-		}
-
-		if (m_pKeyboard != 0)
-		{
-			// CUSBKeyboardDevice::UpdateLEDs() must not be called in interrupt context,
-			// that's why this must be done here. This does nothing in raw mode.
-			m_pKeyboard->UpdateLEDs ();
-		}
-
-		m_Screen.Rotor (0, nCount);
 		m_Timer.MsDelay (100);
 	}
 

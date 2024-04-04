@@ -4,6 +4,9 @@
 #include <circle/logger.h>
 #include <circle/screen.h>
 #include <circle/koptions.h>
+#include <circle/devicenameservice.h>
+#include <circle/usb/usbhcidevice.h>
+#include <circle/usb/usbkeyboard.h>
 
 static const char FromSnakepit[] = "snakepit";
 
@@ -11,11 +14,16 @@ class Game
 {
 public:
     CLogger logger;
-    Game(CLogger logger, CScreenDevice screen);
+    Game(CLogger logger, CScreenDevice screen, CDeviceNameService deviceNameService, CUSBHCIDevice usbhci);
+    void init();
     void run();
 
 private:
     CScreenDevice screen;
+    CDeviceNameService deviceNameService;
+    CUSBHCIDevice usbhci;
+    CUSBKeyboardDevice * volatile keyboard;
+    void get_keyboard();
     void init_player();
     void init_snakes();
     void init_snake_pit();

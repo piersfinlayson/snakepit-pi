@@ -158,9 +158,37 @@ public:
 };
 Player player({-1, -1}, Player::OPEN);
 
-Game::Game(CLogger logger, CScreenDevice screen)
-    : logger(logger), screen(screen)
-{}
+Game::Game(CLogger logger, CScreenDevice screen, CDeviceNameService deviceNameService, CUSBHCIDevice usbhci)
+    : logger(logger), screen(screen), deviceNameService(deviceNameService), usbhci(usbhci)
+{
+    keyboard = nullptr;
+}
+
+void Game::init()
+{
+    get_keyboard();
+}
+
+void Game::get_keyboard()
+{
+    if (keyboard == nullptr)
+    {
+        boolean updated = usbhci.UpdatePlugAndPlay();
+        if (updated)
+        {
+            keyboard = (CUSBKeyboardDevice *)deviceNameService.GetDevice("ukbd1", FALSE);
+            if (keyboard != nullptr)
+            {
+#if 0
+                keyboard->RegisterRemovedHandler(KeyboardRemovedHandler);
+                keyboard->RegisterShutdownHandler(ShutdownHandler);
+                keyboard->RegisterKeyPressedHandler(KeyPressedHandler);
+#endif
+            }
+        }
+
+    }
+}
 
 void Game::run()
 {
