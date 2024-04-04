@@ -177,7 +177,15 @@ void Game::run()
     }
 
     // Draw the snake pit
-    render_snake_pit();
+    //render_snake_pit();
+
+    for (unsigned nPosX = 0; nPosX < screen.GetWidth (); nPosX++)
+	{
+		unsigned nPosY = nPosX * screen.GetHeight () / screen.GetWidth ();
+
+		screen.SetPixel (nPosX, nPosY, NORMAL_COLOR);
+		screen.SetPixel (screen.GetWidth ()-nPosX-1, nPosY, NORMAL_COLOR);
+	}
 
     // Round robin, with the player and each snake taking turns to move
 
