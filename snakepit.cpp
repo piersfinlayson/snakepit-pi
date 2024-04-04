@@ -9,18 +9,21 @@
 #define SNAKE_PIT_COLS 22
 #define NUM_SNAKES 7
 
+// How many times bigger to make the game image
+#define ZOOM 4
+
 const unsigned int SNAKE_COLOURS[NUM_SNAKES] =
 {
     0xaa0000, // red
     0xaaaaaa, // white
     0x00aaaa, // cyan
-    0xaa00aa, // pruple
+    0xaa00aa, // purple
     0x00aa00, // green
     0x0000aa, // blue
     0xaaaa00  // yellow
 };
 #define PLAYER_COLOUR 0xaaaaaa
-#define EGG_COLOUR 0x00aa00
+#define EGG_COLOUR 0xaa0000
 #define EMPTY_COLOUR 0x000000
 
 const unsigned char CHAR_EGG[CHAR_SIZE] = {0x3e, 0x41, 0x41, 0x41, 0x41, 0x41, 0x3e, 0x00};
@@ -162,6 +165,7 @@ Game::Game(CLogger logger, CScreenDevice screen)
 void Game::run()
 {
     logger.Write(FromSnakepit, LogNotice, "Game::run() called");
+    logger.Write(FromSnakepit, LogNotice, "Colour depth: %d", DEPTH);
 
     // (Re-)initialise the player and snakes
     init_player();
@@ -178,18 +182,7 @@ void Game::run()
     }
 
     // Draw the snake pit
-    //render_snake_pit();
-    logger.Write(FromSnakepit, LogNotice, "Screen width %d, height %d", screen.GetWidth(), screen.GetHeight());
-
-    unsigned int xx;
-    unsigned int yy;
-    for (yy = 100; yy < 900; yy++)
-    {
-        for (xx = 100; xx < 1800; xx++)
-        {
-            screen.SetPixel(xx, yy, NORMAL_COLOR);
-        }
-    }
+    render_snake_pit();
 
     // Round robin, with the player and each snake taking turns to move
 
@@ -263,6 +256,38 @@ void Game::render_snake_pit()
 
 void Game::draw_char(const unsigned char *contents, unsigned int colour, unsigned char attr, int x, int y)
 {
+    TScreenColor screen_colour;
+    switch (colour)
+    {
+        case 0x000000:
+            screen_colour = BLACK_COLOR;
+            break;
+        case 0x0000aa:
+            screen_colour = BLUE_COLOR;
+            break;
+        case 0x00aa00:
+            screen_colour = GREEN_COLOR;
+            break;
+        case 0x00aaaa:
+            screen_colour = CYAN_COLOR;
+            break;
+        case 0xaa0000:
+            screen_colour = RED_COLOR;
+            break;
+        case 0xaa00aa:
+            screen_colour = MAGENTA_COLOR;
+            break;
+        case 0xaaaa00:
+            screen_colour = YELLOW_COLOR;
+            break;
+        case 0xaaaaaa:
+            screen_colour = WHITE_COLOR;
+            break;
+        default:
+            screen_colour = NORMAL_COLOR;
+            break;
+    }
+
     for (int yy = 0; yy < CHAR_SIZE; yy++)
     {
         unsigned char mask = 1;
@@ -270,7 +295,18 @@ void Game::draw_char(const unsigned char *contents, unsigned int colour, unsigne
         {
             if (*contents & mask)
             {
-                screen.SetPixel(SCREEN_COL_OFFSET + (x * CHAR_SIZE) + xx, SCREEN_ROW_OFFSET + (y * CHAR_SIZE) + yy, NORMAL_COLOR);
+                for (int ii = 0; ii < ZOOM; ii++)
+                {
+                    int x_coords;
+                    int y_coords;
+                    x_coords = SCREEN_COL_OFFSET;
+                    x_coords += x * CHAR_SIZE * ZOOM;
+                    x_coords += (xx * ZOOM) + ii;
+                    y_coords = SCREEN_ROW_OFFSET;
+                    y_coords += y * CHAR_SIZE * ZOOM;
+                    y_coords += (yy * ZOOM) + ii;
+                    screen.SetPixel(x_coords, y_coords, screen_colour);
+                }
             }
             mask <<= 1;
         }
