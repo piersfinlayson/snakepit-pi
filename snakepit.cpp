@@ -2,7 +2,7 @@
 
 #define CHAR_SIZE 8
 
-#define SCREEN_ROW_OFFSET 0
+#define SCREEN_ROW_OFFSET 100
 #define SCREEN_COL_OFFSET 1000
 
 #define SNAKE_PIT_ROWS 22
@@ -244,8 +244,25 @@ void Game::render_snake_pit()
     {
         for (int col = 0; col < SNAKE_PIT_COLS; col++)
         {
-            screen.SetPixel(col + SCREEN_COL_OFFSET, row + SCREEN_ROW_OFFSET, NORMAL_COLOR);
+            draw_char(sc_snake_pit[row][col].contents, sc_snake_pit[row][col].colour, 0, col, row);
         }
+    }
+}
+
+void Game::draw_char(const unsigned char *contents, unsigned int colour, unsigned char attr, int x, int y)
+{
+    for (int yy = 0; yy < CHAR_SIZE; yy++)
+    {
+        unsigned char mask = 1;
+        for (int xx = 0; xx < CHAR_SIZE; xx++)
+        {
+            if (*contents & mask)
+            {
+                screen.SetPixel(SCREEN_COL_OFFSET + (x * CHAR_SIZE) + xx, SCREEN_ROW_OFFSET + (y * CHAR_SIZE) + yy, NORMAL_COLOR);
+            }
+            mask <<= 1;
+        }
+        contents++;
     }
 }
 

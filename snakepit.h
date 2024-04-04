@@ -21,6 +21,7 @@ private:
     void init_snakes();
     void init_snake_pit();
     void render_snake_pit();
+    void draw_char(const unsigned char *contents, unsigned int colour, unsigned char attr, int x, int y);
 };
 
 #endif // SNAKEPIT_H
