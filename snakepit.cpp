@@ -404,6 +404,7 @@ void Game::run()
         for (int ii = 0; ii < NUM_SNAKES; ii++)
         {
             snake[ii].makeMove(snake[ii].generateMove());
+            render_snake_pit();
             timer.MsDelay(1000/moves_per_s/(NUM_SNAKES+1));
         }
     }
