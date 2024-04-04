@@ -2,8 +2,8 @@
 
 #define CHAR_SIZE 8
 
-#define SCREEN_ROW_OFFSET 100
-#define SCREEN_COL_OFFSET 100
+#define SCREEN_ROW_OFFSET 0
+#define SCREEN_COL_OFFSET 1000
 
 #define SNAKE_PIT_ROWS 22
 #define SNAKE_PIT_COLS 22
@@ -155,8 +155,8 @@ public:
 };
 Player player({-1, -1}, Player::OPEN);
 
-Game::Game(CLogger logger)
-    : logger(logger)
+Game::Game(CLogger logger, CKernelOptions kernelOptions)
+    : logger(logger), kernelOptions(kernelOptions), screen(kernelOptions.GetWidth(), kernelOptions.GetHeight())
 {}
 
 void Game::run()
@@ -244,7 +244,7 @@ void Game::render_snake_pit()
     {
         for (int col = 0; col < SNAKE_PIT_COLS; col++)
         {
-            // draw_char(snake_pit[row][col].contents, snake_pit[row][col].colour, 0, col, row);
+            screen.SetPixel(col + SCREEN_COL_OFFSET, row + SCREEN_ROW_OFFSET, NORMAL_COLOR);
         }
     }
 }
