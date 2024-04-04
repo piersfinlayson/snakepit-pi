@@ -178,6 +178,7 @@ void Game::run()
 
     // Draw the snake pit
     //render_snake_pit();
+    logger.Write(FromSnakepit, LogNotice, "Screen width %d, height %d", screen.GetWidth(), screen.GetHeight());
 
     for (unsigned nPosX = 0; nPosX < screen.GetWidth (); nPosX++)
 	{
