@@ -1,6 +1,6 @@
 CIRCLEHOME=~/builds/circle
 
-OBJS = main.o kernel.o
+OBJS = main.o kernel.o snakepit.o
 
 LIBS = $(CIRCLEHOME)/lib/usb/libusb.a \
        $(CIRCLEHOME)/lib/input/libinput.a \

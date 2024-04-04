@@ -2,6 +2,7 @@
 // kernel.cpp
 //
 #include "kernel.h"
+#include "snakepit.h"
 #include <circle/string.h>
 #include <circle/util.h>
 #include <assert.h>
@@ -78,6 +79,9 @@ boolean CKernel::Initialize (void)
 TShutdownMode CKernel::Run (void)
 {
 	m_Logger.Write (FromKernel, LogNotice, "Compile time: " __DATE__ " " __TIME__);
+
+	Game game;
+	game.run();
 
 	m_Logger.Write (FromKernel, LogNotice, "Please attach an USB keyboard, if not already done!");
 
