@@ -155,14 +155,14 @@ public:
 };
 Player player({-1, -1}, Player::OPEN);
 
-Game::Game(CLogger logger, CKernelOptions kernelOptions)
-    : logger(logger), kernelOptions(kernelOptions), screen(kernelOptions.GetWidth(), kernelOptions.GetHeight())
+Game::Game(CLogger logger, CScreenDevice screen)
+    : logger(logger), screen(screen)
 {}
 
 void Game::run()
 {
     logger.Write(FromSnakepit, LogNotice, "Game::run() called");
-    logger.Write(FromSnakepit, LogNotice, "Kernel options screen width %d, height %d", kernelOptions.GetWidth(), kernelOptions.GetHeight());
+
     // (Re-)initialise the player and snakes
     init_player();
     init_snakes();

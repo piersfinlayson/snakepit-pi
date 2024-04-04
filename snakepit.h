@@ -11,11 +11,10 @@ class Game
 {
 public:
     CLogger logger;
-    Game(CLogger logger, CKernelOptions kernelOptions);
+    Game(CLogger logger, CScreenDevice screen);
     void run();
 
 private:
-    CKernelOptions kernelOptions;
     CScreenDevice screen;
     void init_player();
     void init_snakes();

@@ -80,7 +80,7 @@ TShutdownMode CKernel::Run (void)
 {
 	m_Logger.Write (FromKernel, LogNotice, "Compile time: " __DATE__ " " __TIME__);
 
-	Game game(m_Logger, m_Options);
+	Game game(m_Logger, m_Screen);
 	game.run();
 
 	m_Timer.MsDelay (2000);
