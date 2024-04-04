@@ -162,6 +162,7 @@ Game::Game(CLogger logger, CKernelOptions kernelOptions)
 void Game::run()
 {
     logger.Write(FromSnakepit, LogNotice, "Game::run() called");
+    logger.Write(FromSnakepit, LogNotice, "Kernel options screen width %d, height %d", kernelOptions.GetWidth(), kernelOptions.GetHeight());
     // (Re-)initialise the player and snakes
     init_player();
     init_snakes();
@@ -180,13 +181,15 @@ void Game::run()
     //render_snake_pit();
     logger.Write(FromSnakepit, LogNotice, "Screen width %d, height %d", screen.GetWidth(), screen.GetHeight());
 
-    for (unsigned nPosX = 0; nPosX < screen.GetWidth (); nPosX++)
-	{
-		unsigned nPosY = nPosX * screen.GetHeight () / screen.GetWidth ();
-
-		screen.SetPixel (nPosX, nPosY, NORMAL_COLOR);
-		screen.SetPixel (screen.GetWidth ()-nPosX-1, nPosY, NORMAL_COLOR);
-	}
+    unsigned int xx;
+    unsigned int yy;
+    for (yy = 100; yy < 900; yy++)
+    {
+        for (xx = 100; xx < 1800; xx++)
+        {
+            screen.SetPixel(xx, yy, NORMAL_COLOR);
+        }
+    }
 
     // Round robin, with the player and each snake taking turns to move
 

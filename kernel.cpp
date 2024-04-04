@@ -83,6 +83,8 @@ TShutdownMode CKernel::Run (void)
 	Game game(m_Logger, m_Options);
 	game.run();
 
+	m_Timer.MsDelay (2000);
+
 	m_Logger.Write (FromKernel, LogNotice, "Please attach an USB keyboard, if not already done!");
 
 	for (unsigned nCount = 0; m_ShutdownMode == ShutdownNone; nCount++)
