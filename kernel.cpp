@@ -80,7 +80,7 @@ TShutdownMode CKernel::Run (void)
 {
 	m_Logger.Write (FromKernel, LogNotice, "Compile time: " __DATE__ " " __TIME__);
 
-	Game game(m_Logger, m_Screen, m_DeviceNameService, m_USBHCI);
+	Game game(m_Logger, m_Screen, m_DeviceNameService, m_USBHCI, m_Timer);
 	game.init();
 	game.run();
 

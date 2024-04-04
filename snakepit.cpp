@@ -23,7 +23,7 @@ const unsigned int SNAKE_COLOURS[NUM_SNAKES] =
     0xaaaa00  // yellow
 };
 #define PLAYER_COLOUR 0xaaaaaa
-#define EGG_COLOUR 0xaa0000
+#define EGG_COLOUR 0xaa5555
 #define EMPTY_COLOUR 0x000000
 
 const unsigned char CHAR_EGG[CHAR_SIZE] = {0x3e, 0x41, 0x41, 0x41, 0x41, 0x41, 0x3e, 0x00};
@@ -31,6 +31,9 @@ const unsigned char CHAR_SNAKE_HEAD[CHAR_SIZE] = {0x3e, 0x41, 0x55, 0x41, 0x41, 
 const unsigned char CHAR_PLAYER_MOUTH_OPEN[CHAR_SIZE] = {0x3e, 0x41, 0x55, 0x49, 0x55, 0x49, 0x3e, 0x00};
 const unsigned char CHAR_PLAYER_MOUTH_CLOSED[CHAR_SIZE] = {0x3e, 0x41, 0x55, 0x41, 0x5d, 0x41, 0x3e, 0x00};
 const unsigned char CHAR_EMPTY[CHAR_SIZE] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+unsigned int num_eggs;
+unsigned int moves_per_s = 5;
 
 //
 // ScreenChar
@@ -63,6 +66,15 @@ public:
 
     void set(ScreenChar ch)
     {
+        if (ch.colour == EGG_COLOUR)
+        {
+            num_eggs++;
+        }
+        else if ((ch.colour == EMPTY_COLOUR) && (colour == EGG_COLOUR))
+        {
+            num_eggs--;
+        }
+
         for (int ii = 0; ii < CHAR_SIZE; ii++)
         {
             contents[ii] = ch.contents[ii];
@@ -98,6 +110,7 @@ class Snake
 {
 public:
     enum Master { MASTER, NOT_MASTER };
+    enum Direction { UP, DOWN, LEFT, RIGHT };
 
     Point head;
     const Master master; // Can eat eggs
@@ -108,6 +121,7 @@ public:
     {
         myHead = sc_snake_head;
         myHead.colour = colour;
+        lastDirection = Snake::DOWN; // Snakes always start in top left of their hole, as if they were going down
     }
 
     void placeOnScreen()
@@ -115,8 +129,180 @@ public:
         sc_snake_pit[head.y][head.x].set(myHead);
     }
 
+    void makeMove(Direction direction)
+    {
+        // Clear the current position
+        sc_snake_pit[head.y][head.x].set(sc_empty);
+
+        // Move the head
+        switch (direction)
+        {
+            case UP:
+                head.y--;
+                break;
+            case DOWN:
+                head.y++;
+                break;
+            case LEFT:
+                head.x--;
+                break;
+            case RIGHT:
+                head.x++;
+                break;
+            default:
+                break;
+        }
+
+        // Place the head on the screen
+        sc_snake_pit[head.y][head.x].set(myHead);
+
+        // Save the direction
+        lastDirection = direction;
+    }
+
+    Direction generateMove()
+    {
+        // Snakes prefer to move in the direction they were last going
+        // However, they will, with a certain probability, choose a different random direction
+        // However, they can't move over another snake, and non-master snakes can't move over eggs
+        // Snakes will only go back the way they came if they have no other choice
+        
+        // Determine the preferred direction based on the last direction
+        Direction preferredDirection;
+        switch (lastDirection)
+        {
+            case UP:
+                preferredDirection = DOWN;
+                break;
+            case DOWN:
+                preferredDirection = UP;
+                break;
+            case LEFT:
+                preferredDirection = RIGHT;
+                break;
+            case RIGHT:
+                preferredDirection = LEFT;
+                break;
+            default:
+                preferredDirection = UP;
+                break; 
+        }
+
+        // Figure out what diretions we can go in
+        bool allowed[4] = {true, true, true, true};
+        bool preferred[4] = {false, false, false, false};
+        Direction direction[4] = {UP, DOWN, LEFT, RIGHT};
+        unsigned int directionColour[4] = {0, 0, 0, 0};
+        unsigned int probability[4] = {0, 0, 0, 0};
+        for (int ii = 0; ii < 4; ii++)
+        {
+            switch (direction[ii])
+            {
+                case UP:
+                    if (head.y <= 0) 
+                    {
+                        allowed[ii] = false;
+                    }
+                    directionColour[ii] = sc_snake_pit[head.y-1][head.x].colour;
+                    break;
+                case DOWN:
+                    if (head.y >= SNAKE_PIT_ROWS-1)
+                    {
+                        allowed[ii] = false;
+                    }
+                    directionColour[ii] = sc_snake_pit[head.y+1][head.x].colour;
+                    break;
+                case LEFT:
+                    if (head.x <= 0)
+                    {
+                        allowed[ii] = false;
+                    }
+                    directionColour[ii] = sc_snake_pit[head.y][head.x-1].colour;
+                    break;
+                case RIGHT:
+                    if (head.x >= SNAKE_PIT_COLS-1)
+                    {
+                        allowed[ii] = false;
+                    }
+                    directionColour[ii] = sc_snake_pit[head.y][head.x+1].colour;
+                    break;
+                default:
+                    break;
+            }
+            if ((directionColour[ii] != EMPTY_COLOUR) && (directionColour[ii] != colour))
+            {
+                allowed[ii] = false;
+            }
+            if (master && directionColour[ii] == EGG_COLOUR)
+            {
+                allowed[ii] = true;
+            }
+            if (lastDirection == direction[ii])
+            {
+                allowed[ii] = false;
+            }
+            if (preferredDirection == direction[ii])
+            {
+                preferred[ii] = true;
+            }
+        }
+
+        // If we can't move anywhere, go back the way we came
+        if ((allowed[UP] == false) && (allowed[DOWN] == false) && (allowed[LEFT] == false) && (allowed[RIGHT] == false))
+        {
+            return lastDirection;
+        }
+
+        // If we can move in preferred direction weight that accordingly
+        unsigned int validDirections = 0;
+        unsigned int percent = 0;
+        for (int ii = 0; ii < 4; ii++)
+        {
+            if (allowed[ii])
+            {
+                validDirections++;
+                if (preferred[ii])
+                {
+                    probability[ii] = 50;
+                    percent = 50;
+                    validDirections--;
+                }
+            }
+        }
+
+        // If this (preferred) was our only move, make it
+        if (validDirections == 0)
+        {
+            return preferredDirection;
+        }
+
+        // Set probabilities for non-preferred directions
+        for (int ii = 0; ii < 4; ii++)
+        {
+            if (allowed[ii] && !preferred[ii])
+            {
+                probability[ii] = percent + ((100-percent) / validDirections);
+                percent = probability[ii];
+                validDirections--;
+            }
+        }
+
+        // Generate a random number between 0 and 99
+        unsigned int randomNum = CBcmRandomNumberGenerator().GetNumber() % 100;
+        for (int ii = 0; ii < 4; ii++)
+        {
+            if (randomNum < probability[ii])
+            {
+                return direction[ii];
+            }
+        }
+
+        return lastDirection; // Belt and braces
+    }
+
 private:
     ScreenChar myHead;
+    Direction lastDirection;
 
 };
 
@@ -158,8 +344,8 @@ public:
 };
 Player player({-1, -1}, Player::OPEN);
 
-Game::Game(CLogger logger, CScreenDevice screen, CDeviceNameService deviceNameService, CUSBHCIDevice usbhci)
-    : logger(logger), screen(screen), deviceNameService(deviceNameService), usbhci(usbhci)
+Game::Game(CLogger logger, CScreenDevice screen, CDeviceNameService deviceNameService, CUSBHCIDevice usbhci, CTimer timer)
+    : logger(logger), screen(screen), deviceNameService(deviceNameService), usbhci(usbhci), timer(timer)
 {
     keyboard = nullptr;
 }
@@ -213,6 +399,14 @@ void Game::run()
     render_snake_pit();
 
     // Round robin, with the player and each snake taking turns to move
+    while (true)
+    {
+        for (int ii = 0; ii < NUM_SNAKES; ii++)
+        {
+            snake[ii].makeMove(snake[ii].generateMove());
+            timer.MsDelay(1000/moves_per_s/(NUM_SNAKES+1));
+        }
+    }
 
     logger.Write(FromSnakepit, LogNotice, "Game::run() exited");
 }

@@ -7,6 +7,8 @@
 #include <circle/devicenameservice.h>
 #include <circle/usb/usbhcidevice.h>
 #include <circle/usb/usbkeyboard.h>
+#include <circle/timer.h>
+#include <circle/bcmrandom.h>
 
 static const char FromSnakepit[] = "snakepit";
 
@@ -14,7 +16,7 @@ class Game
 {
 public:
     CLogger logger;
-    Game(CLogger logger, CScreenDevice screen, CDeviceNameService deviceNameService, CUSBHCIDevice usbhci);
+    Game(CLogger logger, CScreenDevice screen, CDeviceNameService deviceNameService, CUSBHCIDevice usbhci, CTimer timer);
     void init();
     void run();
 
@@ -23,6 +25,7 @@ private:
     CDeviceNameService deviceNameService;
     CUSBHCIDevice usbhci;
     CUSBKeyboardDevice * volatile keyboard;
+    CTimer timer;
     void get_keyboard();
     void init_player();
     void init_snakes();
