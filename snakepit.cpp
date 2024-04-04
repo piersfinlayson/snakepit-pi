@@ -155,8 +155,13 @@ public:
 };
 Player player({-1, -1}, Player::OPEN);
 
+Game::Game(CLogger logger)
+    : logger(logger)
+{}
+
 void Game::run()
 {
+    logger.Write(FromSnakepit, LogNotice, "Game::run() called");
     // (Re-)initialise the player and snakes
     init_player();
     init_snakes();
@@ -175,6 +180,8 @@ void Game::run()
     render_snake_pit();
 
     // Round robin, with the player and each snake taking turns to move
+
+    logger.Write(FromSnakepit, LogNotice, "Game::run() exited");
 }
 
 void Game::init_player()
@@ -243,26 +250,6 @@ void Game::render_snake_pit()
 }
 
 #if 0
-void *memcpy(void *dest, const void *src, int n)
-{
-    char *dest_char = (char *)dest;
-    char *src_char = (char *)src;    
-    while (n--)
-    {
-        *dest_char++ = *src_char++;
-    }
-    return dest;
-}
-
-void *memset(void *s, int c, unsigned int n)
-{
-    char *s_char = (char *)s;
-    while (n--)
-    {
-        *s_char++ = c;
-    }
-    return s;
-}
 
 void clear_pos(unsigned char x, unsigned char y)
 {
