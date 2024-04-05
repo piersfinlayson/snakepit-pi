@@ -12,13 +12,18 @@
 
 static const char FromSnakepit[] = "snakepit";
 
+void KeyPressedHandler(const char *string);
+void KeyReleasedHandler(const char *string);
+void KeyboardRemovedHandler(CDevice *device, void *context);
+void KeyboardShutdownHandler();
+
 class Game
 {
 public:
     CLogger logger;
     Game(CLogger logger, CScreenDevice screen, CDeviceNameService deviceNameService, CUSBHCIDevice usbhci, CTimer timer);
     void init();
-    void run();
+    void go();
 
 private:
     CScreenDevice screen;

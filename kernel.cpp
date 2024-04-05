@@ -82,7 +82,7 @@ TShutdownMode CKernel::Run (void)
 
 	Game game(m_Logger, m_Screen, m_DeviceNameService, m_USBHCI, m_Timer);
 	game.init();
-	game.run();
+	game.go();
 
 	m_Timer.MsDelay (2000);
 

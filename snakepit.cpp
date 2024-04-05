@@ -34,6 +34,9 @@ const unsigned char CHAR_EMPTY[CHAR_SIZE] = {0, 0, 0, 0, 0, 0, 0, 0};
 
 unsigned int num_eggs;
 unsigned int moves_per_s = 5;
+volatile static char last_key_pressed = 0;
+static CLogger *glogger = nullptr;
+static boolean run = false;
 
 //
 // ScreenChar
@@ -341,6 +344,14 @@ public:
         }
         sc_snake_pit[pos.y][pos.x].set(player_char);
     }
+
+    void takeTurn()
+    {
+        if (last_key_pressed != 0)
+        {
+            glogger->Write(FromSnakepit, LogNotice, "Player key pressed: %c", last_key_pressed);
+        }
+    }
 };
 Player player({-1, -1}, Player::OPEN);
 
@@ -348,6 +359,8 @@ Game::Game(CLogger logger, CScreenDevice screen, CDeviceNameService deviceNameSe
     : logger(logger), screen(screen), deviceNameService(deviceNameService), usbhci(usbhci), timer(timer)
 {
     keyboard = nullptr;
+    glogger = &logger;
+    run = false;
 }
 
 void Game::init()
@@ -365,18 +378,43 @@ void Game::get_keyboard()
             keyboard = (CUSBKeyboardDevice *)deviceNameService.GetDevice("ukbd1", FALSE);
             if (keyboard != nullptr)
             {
-#if 0
-                keyboard->RegisterRemovedHandler(KeyboardRemovedHandler);
-                keyboard->RegisterShutdownHandler(ShutdownHandler);
+                logger.Write(FromSnakepit, LogNotice, "Keyboard found");
                 keyboard->RegisterKeyPressedHandler(KeyPressedHandler);
-#endif
+                keyboard->RegisterKeyReleasedHandler(KeyReleasedHandler);
+                keyboard->RegisterRemovedHandler(KeyboardRemovedHandler);
+                keyboard->RegisterShutdownHandler(KeyboardShutdownHandler);
             }
         }
-
     }
 }
 
-void Game::run()
+void KeyPressedHandler(const char *string)
+{
+    last_key_pressed = string[0];
+}
+
+void KeyReleasedHandler(const char *string)
+{
+    char key = string[0];
+    if (key == last_key_pressed)
+    {  
+        last_key_pressed = 0;
+    }
+}
+
+void KeyboardRemovedHandler(CDevice *device, void *context)
+{
+    glogger->Write(FromSnakepit, LogNotice, "Keyboard removed");
+    run = false;
+}
+
+void KeyboardShutdownHandler()
+{
+    glogger->Write(FromSnakepit, LogNotice, "Keyboard shutdown");
+    run = false;
+}
+
+void Game::go()
 {
     logger.Write(FromSnakepit, LogNotice, "Game::run() called");
     logger.Write(FromSnakepit, LogNotice, "Colour depth: %d", DEPTH);
@@ -399,7 +437,8 @@ void Game::run()
     render_snake_pit();
 
     // Round robin, with the player and each snake taking turns to move
-    while (true)
+    run = true;
+    while (run)
     {
         for (int ii = 0; ii < NUM_SNAKES; ii++)
         {
@@ -407,6 +446,7 @@ void Game::run()
             render_snake_pit();
             timer.MsDelay(1000/moves_per_s/(NUM_SNAKES+1));
         }
+        player.takeTurn();
     }
 
     logger.Write(FromSnakepit, LogNotice, "Game::run() exited");
