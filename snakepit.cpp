@@ -142,6 +142,15 @@ public:
         sc_snake_pit[head.y][head.x].set(myHead);
     }
 
+    void takeTurn()
+    {
+        makeMove(generateMove());
+    }
+
+private:
+    ScreenChar myHead;
+    Direction lastDirection;
+
     void makeMove(Direction direction)
     {
         // Clear the current position
@@ -167,7 +176,7 @@ public:
         }
 
         // Place the head on the screen
-        sc_snake_pit[head.y][head.x].set(myHead);
+        placeOnScreen();
 
         // Save the direction
         lastDirection = direction;
@@ -312,10 +321,6 @@ public:
 
         return lastDirection; // Belt and braces
     }
-
-private:
-    ScreenChar myHead;
-    Direction lastDirection;
 
 };
 
@@ -499,7 +504,7 @@ void Game::go()
     {
         for (int ii = 0; ii < NUM_SNAKES; ii++)
         {
-            snake[ii].makeMove(snake[ii].generateMove());
+            snake[ii].takeTurn();
             render_snake_pit();
             timer.MsDelay(1000/moves_per_s/(NUM_SNAKES+1));
         }
