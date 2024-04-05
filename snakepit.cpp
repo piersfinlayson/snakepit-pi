@@ -98,11 +98,21 @@ ScreenChar sc_player_mouth_open(CHAR_PLAYER_MOUTH_OPEN, PLAYER_COLOUR);
 ScreenChar sc_player_mouth_closed(CHAR_PLAYER_MOUTH_CLOSED, PLAYER_COLOUR);
 ScreenChar sc_snake_pit[SNAKE_PIT_ROWS][SNAKE_PIT_COLS];
 
-typedef struct
+struct Point
 {
     int x;
     int y;
-} Point;
+
+    bool operator==(const Point& other) const
+    {
+        return x == other.x && y == other.y;
+    }
+
+    bool operator!=(const Point& other) const
+    {
+        return x != other.x || y != other.y;
+    }
+};
 
 //
 // Snake
@@ -347,10 +357,57 @@ public:
 
     void takeTurn()
     {
+        if (animation == Player::OPEN)
+        {
+            animation = Player::CLOSED;
+        }
+        else
+        {
+            animation = Player::OPEN;
+        }
+
         if (last_key_pressed != 0)
         {
             glogger->Write(FromSnakepit, LogNotice, "Player key pressed: %c", last_key_pressed);
         }
+        Point current = pos;
+        Point next = pos;
+        switch (last_key_pressed)
+        {
+            case 'z':
+                // left
+                next.x--;
+                break;
+            case 'x':
+                // right
+                next.x++;
+                break;
+            case ';':
+                // up
+                next.y--;
+                break;
+            case '.':
+                // down
+                next.y++;
+                break;
+        }
+
+        // Check if user an move in the desired direction
+        if (next != current)
+        {
+            if (next.x >= 0 && next.x < SNAKE_PIT_COLS && next.y >= 0 && next.y < SNAKE_PIT_ROWS)
+            {
+                if ((sc_snake_pit[next.y][next.x].colour == EGG_COLOUR) ||
+                    (sc_snake_pit[next.y][next.x].colour == EMPTY_COLOUR))
+                {
+                    sc_snake_pit[pos.y][pos.x].set(sc_empty);
+                    pos = next;
+                    // Player is updated below - as even if they don't move we want to change animations
+                }
+            }
+
+        }
+        placeOnScreen();
     }
 };
 Player player({-1, -1}, Player::OPEN);
@@ -447,6 +504,7 @@ void Game::go()
             timer.MsDelay(1000/moves_per_s/(NUM_SNAKES+1));
         }
         player.takeTurn();
+        render_snake_pit();
     }
 
     logger.Write(FromSnakepit, LogNotice, "Game::run() exited");
