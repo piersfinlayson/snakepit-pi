@@ -11,7 +11,7 @@
 //   keycode translation.
 //#define EXPAND_CHARACTERS
 
-static const char FromKernel[] = "kernel";
+static const char FromKernel[] = "snakepit kernel";
 
 CKernel *CKernel::s_pThis = 0;
 
@@ -20,7 +20,7 @@ CKernel::CKernel (void)
 	m_Timer (&m_Interrupt),
 	m_Logger (m_Options.GetLogLevel (), &m_Timer),
 	m_USBHCI (&m_Interrupt, &m_Timer, TRUE),		// TRUE: enable plug-and-play
-	m_pKeyboard (0),
+	keyboard (nullptr),
 	m_ShutdownMode (ShutdownNone)
 {
 	s_pThis = this;
@@ -65,85 +65,58 @@ boolean CKernel::Initialize (void)
 
 	if (bOK)
 	{
-		bOK = m_Timer.Initialize ();
+		bOK = m_Timer.Initialize();
 	}
 
 	if (bOK)
 	{
-		bOK = m_USBHCI.Initialize ();
+		bOK = m_USBHCI.Initialize();
 	}
-
+ 
 	return bOK;
 }
 
 TShutdownMode CKernel::Run (void)
 {
+	bool ok;
+
 	m_Logger.Write (FromKernel, LogNotice, "Compile time: " __DATE__ " " __TIME__);
+	m_Logger.Write (FromKernel, LogNotice, "Finding keyboard");
+	get_keyboard();
 
-	Game game(m_Logger, m_Screen, m_DeviceNameService, m_USBHCI, m_Timer);
-	game.init();
-	game.go();
-
-	m_Timer.MsDelay (2000);
-
-	m_Logger.Write (FromKernel, LogNotice, "Please attach an USB keyboard, if not already done!");
-
-	while (m_ShutdownMode == ShutdownNone)
+	Game game(m_DeviceNameService, m_Screen, m_Timer, m_Logger, keyboard);
+	ok = game.init();
+	if (ok)
 	{
-		m_Timer.MsDelay (100);
+		game.go();
+	}
+	else
+	{
+		m_Logger.Write (FromKernel, LogError, "Game initialization failed");
 	}
 
-	return m_ShutdownMode;
+	m_Logger.Write (FromKernel, LogError, "Halting");
+
+	return ShutdownHalt;
 }
 
-void CKernel::KeyPressedHandler (const char *pString)
+void CKernel::get_keyboard()
 {
-	assert (s_pThis != 0);
-#ifdef EXPAND_CHARACTERS
-	while (*pString)
-          {
-	  CString s;
-	  s.Format ("'%c' %d %02X\n", *pString, *pString, *pString);
-          pString++;
-	  s_pThis->m_Screen.Write (s, strlen (s));
-          }
-#else
-	s_pThis->m_Screen.Write (pString, strlen (pString));
-#endif
-}
-
-void CKernel::ShutdownHandler (void)
-{
-	assert (s_pThis != 0);
-	s_pThis->m_ShutdownMode = ShutdownReboot;
-}
-
-void CKernel::KeyStatusHandlerRaw (unsigned char ucModifiers, const unsigned char RawKeys[6])
-{
-	assert (s_pThis != 0);
-
-	CString Message;
-	Message.Format ("Key status (modifiers %02X)", (unsigned) ucModifiers);
-
-	for (unsigned i = 0; i < 6; i++)
-	{
-		if (RawKeys[i] != 0)
-		{
-			CString KeyCode;
-			KeyCode.Format (" %02X", (unsigned) RawKeys[i]);
-
-			Message.Append (KeyCode);
-		}
-	}
-
-	s_pThis->m_Logger.Write (FromKernel, LogNotice, Message);
-}
-
-void CKernel::KeyboardRemovedHandler (CDevice *pDevice, void *pContext)
-{
-	assert (s_pThis != 0);
-
-	CLogger::Get ()->Write (FromKernel, LogDebug, "Keyboard removed");
-
-	s_pThis->m_pKeyboard = 0;
+	m_Logger.Write (FromKernel, LogNotice, "Ensure a keyboard is plugged in - searching ...");
+    if (keyboard == nullptr)
+    {
+        boolean updated = m_USBHCI.UpdatePlugAndPlay();
+        if (updated)
+        {
+            keyboard = (CUSBKeyboardDevice *)m_DeviceNameService.GetDevice("ukbd1", FALSE);
+            if (keyboard != nullptr)
+            {
+                m_Logger.Write(FromKernel, LogNotice, "Keyboard found");
+                keyboard->RegisterKeyPressedHandler(KeyPressedHandler);
+                keyboard->RegisterKeyReleasedHandler(KeyReleasedHandler);
+                keyboard->RegisterRemovedHandler(KeyboardRemovedHandler);
+                keyboard->RegisterShutdownHandler(KeyboardShutdownHandler);
+            }
+        }
+    }
 }

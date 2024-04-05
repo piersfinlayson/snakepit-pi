@@ -1,96 +1,13 @@
 #include "snakepit.h"
 
-#define CHAR_SIZE 8
-
-#define SCREEN_ROW_OFFSET 100
-#define SCREEN_COL_OFFSET 1000
-
-#define SNAKE_PIT_ROWS 22
-#define SNAKE_PIT_COLS 22
-#define NUM_SNAKES 7
-
-// How many times bigger to make the game image
-#define ZOOM 4
-
-const unsigned int SNAKE_COLOURS[NUM_SNAKES] =
-{
-    0xaa0000, // red
-    0xaaaaaa, // white
-    0x00aaaa, // cyan
-    0xaa00aa, // purple
-    0x00aa00, // green
-    0x0000aa, // blue
-    0xaaaa00  // yellow
-};
-#define PLAYER_COLOUR 0xaaaaaa
-#define EGG_COLOUR 0xaa5555
-#define EMPTY_COLOUR 0x000000
-
-const unsigned char CHAR_EGG[CHAR_SIZE] = {0x3e, 0x41, 0x41, 0x41, 0x41, 0x41, 0x3e, 0x00};
-const unsigned char CHAR_SNAKE_HEAD[CHAR_SIZE] = {0x3e, 0x41, 0x55, 0x41, 0x41, 0x41, 0x3e, 0x00};
-const unsigned char CHAR_PLAYER_MOUTH_OPEN[CHAR_SIZE] = {0x3e, 0x41, 0x55, 0x49, 0x55, 0x49, 0x3e, 0x00};
-const unsigned char CHAR_PLAYER_MOUTH_CLOSED[CHAR_SIZE] = {0x3e, 0x41, 0x55, 0x41, 0x5d, 0x41, 0x3e, 0x00};
-const unsigned char CHAR_EMPTY[CHAR_SIZE] = {0, 0, 0, 0, 0, 0, 0, 0};
-
-unsigned int num_eggs;
-unsigned int moves_per_s = 5;
+static int num_eggs;
+static unsigned int moves_per_s = 5;
 volatile static char last_key_pressed = 0;
 static CLogger *glogger = nullptr;
 static boolean run = false;
 
-//
-// ScreenChar
-//
-// The bitmap and colour of a character on the screen
-//
-class ScreenChar
-{
-public:
-    unsigned char contents[CHAR_SIZE];
-    unsigned int colour;
+static const char FromSnakepit[] = "snakepit";
 
-    ScreenChar()
-        : colour(0)
-    {
-        for (int ii = 0; ii < CHAR_SIZE; ii++)
-        {
-            contents[ii] = 0;
-        }
-    }
-
-    ScreenChar(const unsigned char contents[CHAR_SIZE], unsigned int colour)
-        : colour(colour)
-    {
-        for (int ii = 0; ii < CHAR_SIZE; ii++)
-        {
-            this->contents[ii] = contents[ii];
-        }
-    }
-
-    void set(ScreenChar ch)
-    {
-        if (ch.colour == EGG_COLOUR)
-        {
-            num_eggs++;
-        }
-        else if ((ch.colour == EMPTY_COLOUR) && (colour == EGG_COLOUR))
-        {
-            num_eggs--;
-        }
-
-        for (int ii = 0; ii < CHAR_SIZE; ii++)
-        {
-            contents[ii] = ch.contents[ii];
-        }
-        colour = ch.colour;
-    }
-
-    void set(ScreenChar ch, unsigned int overrideColour)
-    {
-        set(ch);
-        colour = overrideColour;
-    }
-};
 ScreenChar sc_egg(CHAR_EGG, EGG_COLOUR);
 ScreenChar sc_empty(CHAR_EMPTY, EMPTY_COLOUR);
 ScreenChar sc_snake_head(CHAR_SNAKE_HEAD, 0);
@@ -98,356 +15,391 @@ ScreenChar sc_player_mouth_open(CHAR_PLAYER_MOUTH_OPEN, PLAYER_COLOUR);
 ScreenChar sc_player_mouth_closed(CHAR_PLAYER_MOUTH_CLOSED, PLAYER_COLOUR);
 ScreenChar sc_snake_pit[SNAKE_PIT_ROWS][SNAKE_PIT_COLS];
 
-struct Point
+ScreenChar::ScreenChar()
+    : colour(0)
 {
-    int x;
-    int y;
-
-    bool operator==(const Point& other) const
+    for (int ii = 0; ii < CHAR_SIZE; ii++)
     {
-        return x == other.x && y == other.y;
+        contents[ii] = 0;
     }
+}
 
-    bool operator!=(const Point& other) const
-    {
-        return x != other.x || y != other.y;
-    }
-};
-
-//
-// Snake
-//
-// The snake
-//
-class Snake
+ScreenChar::ScreenChar(const unsigned char contents[CHAR_SIZE], unsigned int colour)
+    : colour(colour)
 {
-public:
-    enum Master { MASTER, NOT_MASTER };
-    enum Direction { UP, DOWN, LEFT, RIGHT };
-
-    Point head;
-    const Master master; // Can eat eggs
-    const unsigned int colour;
-
-    Snake(Point head, Master master, unsigned int colour) 
-        : head(head), master(master), colour(colour)
+    for (int ii = 0; ii < CHAR_SIZE; ii++)
     {
-        myHead = sc_snake_head;
-        myHead.colour = colour;
-        lastDirection = Snake::DOWN; // Snakes always start in top left of their hole, as if they were going down
+        this->contents[ii] = contents[ii];
+    }
+}
+
+void ScreenChar::set(ScreenChar ch)
+{
+    if (ch.colour == EGG_COLOUR)
+    {
+        num_eggs++;
+    }
+    else if ((ch.colour == EMPTY_COLOUR) && (colour == EGG_COLOUR))
+    {
+        num_eggs--;
+    }
+    assert(num_eggs >= 0);
+
+    for (int ii = 0; ii < CHAR_SIZE; ii++)
+    {
+        contents[ii] = ch.contents[ii];
+    }
+    colour = ch.colour;
+}
+
+void ScreenChar::set(ScreenChar ch, unsigned int overrideColour)
+{
+    set(ch);
+    colour = overrideColour;
+}
+
+Snake::Snake(Point head, Master master, unsigned int colour, CLogger *logger) 
+    : head(head), master(master), colour(colour), logger(logger)
+{
+    myHead = sc_snake_head;
+    myHead.colour = colour;
+    lastDirection = Snake::DOWN; // Snakes always start in top left of their hole, as if they were going down
+}
+
+void Snake::placeOnScreen()
+{
+    //logger->Write(FromSnakepit, LogDebug, "Placing snake head at %d/%d", head.x, head.y);
+    sc_snake_pit[head.y][head.x].set(myHead);
+}
+
+void Snake::takeTurn()
+{
+    makeMove(generateMove());
+}
+
+void Snake::makeMove(Direction direction)
+{
+    Point current = head;
+    Point next = head;
+
+    // Move the head
+    switch (direction)
+    {
+        case UP:
+            next.y--;
+            break;
+        case DOWN:
+            next.y++;
+            break;
+        case LEFT:
+            next.x--;
+            break;
+        case RIGHT:
+            next.x++;
+            break;
     }
 
-    void placeOnScreen()
+    // Clear the current position
+    sc_snake_pit[current.y][current.x].set(sc_empty);
+
+    // Place the head on the screen
+    head = next;
+    placeOnScreen();
+
+    // Save the direction
+    lastDirection = direction;
+}
+
+Snake::Direction Snake::generateMove()
+{
+    // Snakes prefer to move in the direction they were last going
+    // However, they will, with a certain probability, choose a different random direction
+    // However, they can't move over another snake, and non-master snakes can't move over eggs
+    // Snakes will only go back the way they came if they have no other choice
+    
+    // Set the preferred direction based on the last direction
+    Direction preferredDirection = lastDirection;
+    Direction lastResortDirection;
+    switch (preferredDirection)
     {
-        sc_snake_pit[head.y][head.x].set(myHead);
+        case UP:
+            lastResortDirection = DOWN;
+            break;
+        case DOWN:
+            lastResortDirection = UP;
+            break;
+        case LEFT:
+            lastResortDirection = RIGHT;
+            break;
+        case RIGHT:
+            lastResortDirection = LEFT;
+            break;
+        default:
+            lastResortDirection = DOWN;
+            assert(false);
+            break;
     }
 
-    void takeTurn()
+    // Figure out what directions we can go in
+    bool allowed[4] = {true, true, true, true};
+    bool preferred[4] = {false, false, false, false};
+    Direction direction[4] = {UP, DOWN, LEFT, RIGHT};
+    unsigned int probability[4] = {0, 0, 0, 0};
+    int preferredIndex = -1;
+    int validDirections = 0;
+    for (int ii = 0; ii < 4; ii++)
     {
-        makeMove(generateMove());
-    }
+        if (preferredDirection == direction[ii])
+        {
+            preferred[ii] = true;
+        }
 
-private:
-    ScreenChar myHead;
-    Direction lastDirection;
-
-    void makeMove(Direction direction)
-    {
-        // Clear the current position
-        sc_snake_pit[head.y][head.x].set(sc_empty);
-
-        // Move the head
-        switch (direction)
+        Point directionPos;
+        unsigned int directionColour;
+        switch (direction[ii])
         {
             case UP:
-                head.y--;
+                if (head.y <= 0) 
+                {
+                    allowed[ii] = false;
+                }
+                else
+                {
+                    directionPos = {head.x, head.y-1};
+                }
                 break;
+
             case DOWN:
-                head.y++;
+                if (head.y >= SNAKE_PIT_ROWS-1)
+                {
+                    allowed[ii] = false;
+                }
+                else
+                {
+                    directionPos = {head.x, head.y+1};
+                }
                 break;
+
             case LEFT:
-                head.x--;
+                if (head.x <= 0)
+                {
+                    allowed[ii] = false;
+                }
+                else
+                {
+                    directionPos = {head.x-1, head.y};
+                }
                 break;
+
             case RIGHT:
-                head.x++;
+                if (head.x >= SNAKE_PIT_COLS-1)
+                {
+                    allowed[ii] = false;
+                }
+                else
+                {
+                    directionPos = {head.x+1, head.y};
+                }
                 break;
+            
             default:
+                directionPos = {0, 0};
+                assert(false);
                 break;
         }
 
-        // Place the head on the screen
-        placeOnScreen();
-
-        // Save the direction
-        lastDirection = direction;
-    }
-
-    Direction generateMove()
-    {
-        // Snakes prefer to move in the direction they were last going
-        // However, they will, with a certain probability, choose a different random direction
-        // However, they can't move over another snake, and non-master snakes can't move over eggs
-        // Snakes will only go back the way they came if they have no other choice
-        
-        // Determine the preferred direction based on the last direction
-        Direction preferredDirection;
-        switch (lastDirection)
+        if (allowed[ii])
         {
-            case UP:
-                preferredDirection = DOWN;
-                break;
-            case DOWN:
-                preferredDirection = UP;
-                break;
-            case LEFT:
-                preferredDirection = RIGHT;
-                break;
-            case RIGHT:
-                preferredDirection = LEFT;
-                break;
-            default:
-                preferredDirection = UP;
-                break; 
-        }
+            // We use the colour of that direction to decide whether it contains something we can't move over
+            directionColour = sc_snake_pit[directionPos.y][directionPos.x].colour;
 
-        // Figure out what diretions we can go in
-        bool allowed[4] = {true, true, true, true};
-        bool preferred[4] = {false, false, false, false};
-        Direction direction[4] = {UP, DOWN, LEFT, RIGHT};
-        unsigned int directionColour[4] = {0, 0, 0, 0};
-        unsigned int probability[4] = {0, 0, 0, 0};
-        for (int ii = 0; ii < 4; ii++)
-        {
-            switch (direction[ii])
-            {
-                case UP:
-                    if (head.y <= 0) 
-                    {
-                        allowed[ii] = false;
-                    }
-                    directionColour[ii] = sc_snake_pit[head.y-1][head.x].colour;
-                    break;
-                case DOWN:
-                    if (head.y >= SNAKE_PIT_ROWS-1)
-                    {
-                        allowed[ii] = false;
-                    }
-                    directionColour[ii] = sc_snake_pit[head.y+1][head.x].colour;
-                    break;
-                case LEFT:
-                    if (head.x <= 0)
-                    {
-                        allowed[ii] = false;
-                    }
-                    directionColour[ii] = sc_snake_pit[head.y][head.x-1].colour;
-                    break;
-                case RIGHT:
-                    if (head.x >= SNAKE_PIT_COLS-1)
-                    {
-                        allowed[ii] = false;
-                    }
-                    directionColour[ii] = sc_snake_pit[head.y][head.x+1].colour;
-                    break;
-                default:
-                    break;
-            }
-            if ((directionColour[ii] != EMPTY_COLOUR) && (directionColour[ii] != colour))
+            // Non-master snakes can only go into empty cells, or back over themselves
+            if ((directionColour != EMPTY_COLOUR) && (directionColour != colour))
             {
                 allowed[ii] = false;
             }
-            if (master && directionColour[ii] == EGG_COLOUR)
+
+            // Master snakes can go over eggs
+            if ((master == MASTER) && (directionColour == EGG_COLOUR))
             {
                 allowed[ii] = true;
             }
-            if (lastDirection == direction[ii])
-            {
-                allowed[ii] = false;
-            }
-            if (preferredDirection == direction[ii])
-            {
-                preferred[ii] = true;
-            }
         }
 
-        // If we can't move anywhere, go back the way we came
-        if ((allowed[UP] == false) && (allowed[DOWN] == false) && (allowed[LEFT] == false) && (allowed[RIGHT] == false))
+        //  Only go back the way we came if we have no other choice
+        if (lastResortDirection == direction[ii])
         {
-            return lastDirection;
+            allowed[ii] = false;
+            preferred[ii] = false;
         }
 
-        // If we can move in preferred direction weight that accordingly
-        unsigned int validDirections = 0;
-        unsigned int percent = 0;
+        // If we can't go a direction, clearly we can't prefer it
+        if (!allowed[ii])
+        {
+            preferred[ii] = false;
+        }
+        else
+        {
+            validDirections++;
+        }
+
+        if (preferred[ii])
+        {
+            assert(preferredIndex < 0);
+            preferredIndex = ii;
+        }
+    }
+
+    // If we can't move anywhere, go back the way we came
+    if (!validDirections)
+    {
+        return lastResortDirection;
+    }
+
+    // If we can only go one way, go that way
+    if (validDirections == 1)
+    {
         for (int ii = 0; ii < 4; ii++)
         {
             if (allowed[ii])
             {
-                validDirections++;
-                if (preferred[ii])
-                {
-                    probability[ii] = 50;
-                    percent = 50;
-                    validDirections--;
-                }
-            }
-        }
-
-        // If this (preferred) was our only move, make it
-        if (validDirections == 0)
-        {
-            return preferredDirection;
-        }
-
-        // Set probabilities for non-preferred directions
-        for (int ii = 0; ii < 4; ii++)
-        {
-            if (allowed[ii] && !preferred[ii])
-            {
-                probability[ii] = percent + ((100-percent) / validDirections);
-                percent = probability[ii];
-                validDirections--;
-            }
-        }
-
-        // Generate a random number between 0 and 99
-        unsigned int randomNum = CBcmRandomNumberGenerator().GetNumber() % 100;
-        for (int ii = 0; ii < 4; ii++)
-        {
-            if (randomNum < probability[ii])
-            {
                 return direction[ii];
             }
         }
-
-        return lastDirection; // Belt and braces
+        return lastResortDirection; // Belt and braces
     }
 
-};
+    // More than one valid direction, weight them
+    unsigned int percent = 0;
+    int percentPer;
+    if (preferredIndex >= 0)
+    {
+        // We have a preferred direction, overweight that
+        probability[preferredIndex] = 80;
+        percent = probability[preferredIndex];
+        validDirections--;
+    }
 
-Snake snake[NUM_SNAKES] = 
+    // Set probabilities for non-preferred directions, with equal weighting
+    percentPer = (100-probability[preferredIndex])/validDirections;
+    for (int ii = 0; ii < 4; ii++)
+    {
+        if (allowed[ii] && (ii != preferredIndex))
+        {
+            percent += percentPer;
+            probability[ii] = percent;
+            validDirections--;
+            assert(validDirections >= 0);
+        }
+    }
+    assert(validDirections == 0);
+
+    // Generate a random number between 0 and 99 and turn into 1-100.
+    unsigned int randomNum = CBcmRandomNumberGenerator().GetNumber() % percent + 1;
+    //if (master == MASTER)
+    //{
+        //logger->Write(FromSnakepit, LogNotice, "Moving red snake result: %d, options up: %d, down: %d, left: %d, right: %d", randomNum, probability[0], probability[1], probability[2], probability[3]);
+    //}
+
+    Snake::Direction lowestProbDirection = lastDirection; // Initialize to a default value
+    unsigned int lowestProb = 101; // Initialize to a value greater than any probability
+    for (int ii = 0; ii < 4; ii++)
+    {
+        if (randomNum <= probability[ii] && probability[ii] < lowestProb)
+        {
+            lowestProb = probability[ii];
+            lowestProbDirection = direction[ii];
+        }
+    }
+    return lowestProbDirection;
+}
+
+Player::Player(Point pos, CLogger *logger) 
+        : pos(pos), animation(Player::OPEN), logger(logger)
+{}
+
+void Player::placeOnScreen()
 {
-    Snake({-1, -1}, Snake::MASTER,     0xaa0000), // red
-    Snake({-1, -1}, Snake::NOT_MASTER, 0xaaaaaa), // white
-    Snake({-1, -1}, Snake::NOT_MASTER, 0x00aaaa), // cyan
-    Snake({-1, -1}, Snake::NOT_MASTER, 0xaa00aa), // purple
-    Snake({-1, -1}, Snake::NOT_MASTER, 0x00aa00), // green
-    Snake({-1, -1}, Snake::NOT_MASTER, 0x0000aa), // blue
-    Snake({-1, -1}, Snake::NOT_MASTER, 0xaaaa00)  // yellow
-};
-
-class Player {
-public:
-    enum Animation { OPEN, CLOSED };
-
-    Point pos;
-    Animation animation;
-
-    Player(Point pos, Animation animation) 
-        : pos(pos), animation(animation)
-    {}
-
-    void placeOnScreen()
+    ScreenChar player_char;
+    if (animation == Player::OPEN)
     {
-        ScreenChar player_char;
-        if (animation == Player::OPEN)
-        {
-            player_char = sc_player_mouth_open;
-        }
-        else
-        {
-            player_char = sc_player_mouth_closed;
-        }
-        sc_snake_pit[pos.y][pos.x].set(player_char);
+        player_char = sc_player_mouth_open;
+    }
+    else
+    {
+        player_char = sc_player_mouth_closed;
+    }
+    //logger->Write(FromSnakepit, LogDebug, "Placing player at %d/%d", pos.x, pos.y);
+    sc_snake_pit[pos.y][pos.x].set(player_char);
+}
+
+void Player::takeTurn()
+{
+    if (animation == Player::OPEN)
+    {
+        animation = Player::CLOSED;
+    }
+    else
+    {
+        animation = Player::OPEN;
     }
 
-    void takeTurn()
+    if (last_key_pressed != 0)
     {
-        if (animation == Player::OPEN)
-        {
-            animation = Player::CLOSED;
-        }
-        else
-        {
-            animation = Player::OPEN;
-        }
+        //logger->Write(FromSnakepit, LogDebug, "Player key pressed: %c", last_key_pressed);
+    }
+    Point current = pos;
+    Point next = pos;
+    switch (last_key_pressed)
+    {
+        case 'z':
+            // left
+            next.x--;
+            break;
+        case 'x':
+            // right
+            next.x++;
+            break;
+        case ';':
+            // up
+            next.y--;
+            break;
+        case '.':
+            // down
+            next.y++;
+            break;
+    }
 
-        if (last_key_pressed != 0)
+    // Check if user an move in the desired direction
+    if (next != current)
+    {
+        if (next.x >= 0 && next.x < SNAKE_PIT_COLS && next.y >= 0 && next.y < SNAKE_PIT_ROWS)
         {
-            glogger->Write(FromSnakepit, LogNotice, "Player key pressed: %c", last_key_pressed);
-        }
-        Point current = pos;
-        Point next = pos;
-        switch (last_key_pressed)
-        {
-            case 'z':
-                // left
-                next.x--;
-                break;
-            case 'x':
-                // right
-                next.x++;
-                break;
-            case ';':
-                // up
-                next.y--;
-                break;
-            case '.':
-                // down
-                next.y++;
-                break;
-        }
-
-        // Check if user an move in the desired direction
-        if (next != current)
-        {
-            if (next.x >= 0 && next.x < SNAKE_PIT_COLS && next.y >= 0 && next.y < SNAKE_PIT_ROWS)
+            if ((sc_snake_pit[next.y][next.x].colour == EGG_COLOUR) ||
+                (sc_snake_pit[next.y][next.x].colour == EMPTY_COLOUR))
             {
-                if ((sc_snake_pit[next.y][next.x].colour == EGG_COLOUR) ||
-                    (sc_snake_pit[next.y][next.x].colour == EMPTY_COLOUR))
-                {
-                    sc_snake_pit[pos.y][pos.x].set(sc_empty);
-                    pos = next;
-                    // Player is updated below - as even if they don't move we want to change animations
-                }
+                sc_snake_pit[pos.y][pos.x].set(sc_empty);
+                pos = next;
+                // Player is updated below - as even if they don't move we want to change animations
             }
-
         }
-        placeOnScreen();
-    }
-};
-Player player({-1, -1}, Player::OPEN);
 
-Game::Game(CLogger logger, CScreenDevice screen, CDeviceNameService deviceNameService, CUSBHCIDevice usbhci, CTimer timer)
-    : logger(logger), screen(screen), deviceNameService(deviceNameService), usbhci(usbhci), timer(timer)
+    }
+    placeOnScreen();
+}
+
+Game::Game(CDeviceNameService deviceNameService, CScreenDevice screen, CTimer timer, CLogger logger, CUSBKeyboardDevice * volatile keyboard)
+    : deviceNameService(deviceNameService), screen(screen), timer(timer), logger(logger), keyboard(keyboard), player(init_player()), snake(init_snakes())
 {
-    keyboard = nullptr;
     glogger = &logger;
-    run = false;
+    //logger.Write(FromSnakepit, LogDebug, "Log created snakes");
 }
 
-void Game::init()
+bool Game::init()
 {
-    get_keyboard();
-}
+    bool ok = true;
 
-void Game::get_keyboard()
-{
-    if (keyboard == nullptr)
-    {
-        boolean updated = usbhci.UpdatePlugAndPlay();
-        if (updated)
-        {
-            keyboard = (CUSBKeyboardDevice *)deviceNameService.GetDevice("ukbd1", FALSE);
-            if (keyboard != nullptr)
-            {
-                logger.Write(FromSnakepit, LogNotice, "Keyboard found");
-                keyboard->RegisterKeyPressedHandler(KeyPressedHandler);
-                keyboard->RegisterKeyReleasedHandler(KeyReleasedHandler);
-                keyboard->RegisterRemovedHandler(KeyboardRemovedHandler);
-                keyboard->RegisterShutdownHandler(KeyboardShutdownHandler);
-            }
-        }
-    }
+    return ok;
 }
 
 void KeyPressedHandler(const char *string)
@@ -466,33 +418,28 @@ void KeyReleasedHandler(const char *string)
 
 void KeyboardRemovedHandler(CDevice *device, void *context)
 {
-    glogger->Write(FromSnakepit, LogNotice, "Keyboard removed");
-    run = false;
+    glogger->Write(FromSnakepit, LogDebug, "Keyboard removed");
+    //run = false;
 }
 
 void KeyboardShutdownHandler()
 {
-    glogger->Write(FromSnakepit, LogNotice, "Keyboard shutdown");
-    run = false;
+    glogger->Write(FromSnakepit, LogDebug, "Keyboard shutdown");
+    //run = false;
 }
 
 void Game::go()
 {
-    logger.Write(FromSnakepit, LogNotice, "Game::run() called");
-    logger.Write(FromSnakepit, LogNotice, "Colour depth: %d", DEPTH);
-
-    // (Re-)initialise the player and snakes
-    init_player();
-    init_snakes();
+    logger.Write(FromSnakepit, LogDebug, "Game started");
 
     // (Re-)initialise the snake pit
     init_snake_pit();
 
     // Place the player and snakes on the screen
-    player.placeOnScreen();
+    player->placeOnScreen();
     for (int ii = 0; ii < NUM_SNAKES; ii++)
     {
-        snake[ii].placeOnScreen();
+        snake[ii]->placeOnScreen();
     }
 
     // Draw the snake pit
@@ -507,60 +454,100 @@ void Game::go()
         {
             if (ii < NUM_SNAKES)
             {
-                snake[ii].takeTurn();
+                snake[ii]->takeTurn();
             }
             else
             {
-                player.takeTurn();
+                player->takeTurn();
+            }
+            if (num_eggs <= 0)
+            {
+                logger.Write(FromSnakepit, LogDebug, "All eggs eaten");
             }
             render_snake_pit();
         }
     }
 
-    logger.Write(FromSnakepit, LogNotice, "Game::run() exited");
+    logger.Write(FromSnakepit, LogDebug, "Game::run() exited");
 }
 
-void Game::init_player()
+Player* Game::init_player()
 {
-    player.pos = {19, 17};
-    player.animation = Player::OPEN;
+    Point pos = {19, 17};
+    //logger.Write(FromSnakepit, LogDebug, "Initialising player at %d/%d", pos.x, pos.y);
+    Player* player = new Player(pos, &logger);
+    return player;
 }
 
-void Game::init_snakes()
+Snake** Game::init_snakes()
 {
-    // Just update the positions - master and colour are correct and don't change
-    int x = 1;
-    int y = 2;
-    
+    Snake** snake = new Snake*[NUM_SNAKES];
+
+    //logger.Write(FromSnakepit, LogDebug, "Initialising snakes");
+
+    Point pos = Point{1, 2};
     for (int ii = 0; ii < NUM_SNAKES; ii++)
     {
-        snake[ii].head = {x, y};
+        //logger.Write(FromSnakepit, LogDebug, "Initialise snake %d at %d/%d", ii, pos.x, pos.y);
+        Snake::Master master = (ii == 0 ? Snake::MASTER : Snake::NOT_MASTER);
+        snake[ii] = new Snake(pos, master, SNAKE_COLOURS[ii], &logger);
+        //logger.Write(FromSnakepit, LogDebug, "Snake %d: %p at %d/%d", ii, snake[ii], snake[ii]->head.x, snake[ii]->head.y);
 
-        x += 6;
-        if (x > (SNAKE_PIT_COLS-3))
+        pos.x += 6;
+        if (pos.x > (SNAKE_PIT_COLS-3))
         {
-            x = 1;
-            y += 15;
+            pos.x = 1;
+            pos.y += 15;
         }
     }
+
+    for (int ii = 0; ii < NUM_SNAKES; ii++)
+    {
+        //logger.Write(FromSnakepit, LogDebug, "Snake %d: %p at %d/%d", ii, snake[ii], snake[ii]->head.x,  snake[ii]->head.y);
+    }
+    return snake;
+}
+
+void Game::reset_player()
+{
+    logger.Write(FromSnakepit, LogDebug, "Resetting player");
+    delete player;
+    player = init_player();
+}
+
+void Game::reset_snakes()
+{
+    logger.Write(FromSnakepit, LogDebug, "Resetting snakes");
+    for (int ii = 0; ii < NUM_SNAKES; ii++)
+    {
+        delete snake[ii];
+    }
+    snake = init_snakes();
 }
 
 void Game::init_snake_pit()
 {
+    //logger.Write(FromSnakepit, LogDebug, "Initialising snake pit");
+
     // Fill the pit with eggs
+    //logger.Write(FromSnakepit, LogDebug, "Fill snake pit with eggs");
     ScreenChar *cell = &sc_snake_pit[0][0];
     for (int ii = 0; ii < (SNAKE_PIT_ROWS * SNAKE_PIT_COLS); ii++)
     {
         cell->set(sc_egg);
         cell++;
     }
+    //logger.Write(FromSnakepit, LogDebug, "Snake pit filled with %d eggs", num_eggs);
 
     // Clear 2x3 holes for each snake
+    //logger.Write(FromSnakepit, LogDebug, "Empty snake nests");
     ScreenChar empty;
     for (int ii = 0; ii < NUM_SNAKES; ii++)
     {
-        int x = snake[ii].head.x;
-        int y = snake[ii].head.y;
+        //logger.Write(FromSnakepit, LogDebug, "Processing snake %d: %p", ii, snake[ii]);
+        int x = snake[ii]->head.x;
+        int y = snake[ii]->head.y;
+        //logger.Write(FromSnakepit, LogDebug, "Empty snake nest %d at %d/%d", ii, x, y);
         for (int xx = x; xx < x+2; xx++)
         {
             for (int yy = y; yy < y+3; yy++)
@@ -572,6 +559,7 @@ void Game::init_snake_pit()
             }
         }
     }
+    logger.Write(FromSnakepit, LogDebug, "Snake pit contains %d eggs", num_eggs);
 }
 
 void Game::render_snake_pit()
@@ -614,6 +602,9 @@ void Game::draw_char(const unsigned char *contents, unsigned int colour, unsigne
         case 0xaaaaaa:
             screen_colour = WHITE_COLOR;
             break;
+        case 0xaa5555:
+            screen_colour = BRIGHT_RED_COLOR;
+            break;
         default:
             screen_colour = NORMAL_COLOR;
             break;
@@ -624,21 +615,28 @@ void Game::draw_char(const unsigned char *contents, unsigned int colour, unsigne
         unsigned char mask = 1;
         for (int xx = 0; xx < CHAR_SIZE; xx++)
         {
+            // Either update the "pixel" to the screen colour or black
+            TScreenColor updateColour;
             if (*contents & mask)
             {
-                for (int ii = 0; ii < ZOOM; ii++)
-                {
-                    int x_coords;
-                    int y_coords;
-                    x_coords = SCREEN_COL_OFFSET;
-                    x_coords += x * CHAR_SIZE * ZOOM;
-                    x_coords += (xx * ZOOM) + ii;
-                    y_coords = SCREEN_ROW_OFFSET;
-                    y_coords += y * CHAR_SIZE * ZOOM;
-                    y_coords += (yy * ZOOM) + ii;
-                    screen.SetPixel(x_coords, y_coords, screen_colour);
-                }
+                updateColour = screen_colour;
             }
+            else
+            {
+                updateColour = BLACK_COLOR;
+            }
+        
+            // Actually update the pixel (or pixels if zooming)
+            for (int ii = 0; ii < ZOOM; ii++)
+            {
+                int x_coords;
+                int y_coords;
+                x_coords = SCREEN_COL_OFFSET + x * CHAR_SIZE * ZOOM + (xx * ZOOM) + ii;
+                y_coords = SCREEN_ROW_OFFSET + y * CHAR_SIZE * ZOOM + (yy * ZOOM) + ii;
+                screen.SetPixel(x_coords, y_coords, updateColour);
+            }
+
+            // Move to next pixel
             mask <<= 1;
         }
         contents++;

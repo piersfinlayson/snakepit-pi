@@ -35,12 +35,7 @@ public:
 	TShutdownMode Run (void);
 
 private:
-	static void KeyPressedHandler (const char *pString);
-	static void ShutdownHandler (void);
-
-	static void KeyStatusHandlerRaw (unsigned char ucModifiers, const unsigned char RawKeys[6]);
-
-	static void KeyboardRemovedHandler (CDevice *pDevice, void *pContext);
+	void get_keyboard(void);
 
 private:
 	// do not change this order
@@ -55,7 +50,8 @@ private:
 	CLogger			m_Logger;
 	CUSBHCIDevice		m_USBHCI;
 
-	CUSBKeyboardDevice * volatile m_pKeyboard;
+	CUSBKeyboardDevice * volatile keyboard = nullptr;
+
 
 	volatile TShutdownMode m_ShutdownMode;
 
