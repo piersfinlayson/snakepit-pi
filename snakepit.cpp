@@ -11,6 +11,7 @@ static const char FromSnakepit[] = "snakepit";
 ScreenChar sc_egg(CHAR_EGG, EGG_COLOUR);
 ScreenChar sc_empty(CHAR_EMPTY, EMPTY_COLOUR);
 ScreenChar sc_snake_head(CHAR_SNAKE_HEAD, 0);
+ScreenChar sc_snake_head_down(CHAR_SNAKE_HEAD_DOWN, 0);
 ScreenChar sc_player_mouth_open(CHAR_PLAYER_MOUTH_OPEN, PLAYER_COLOUR);
 ScreenChar sc_player_mouth_closed(CHAR_PLAYER_MOUTH_CLOSED, PLAYER_COLOUR);
 ScreenChar sc_snake_pit[SNAKE_PIT_ROWS][SNAKE_PIT_COLS];
@@ -69,6 +70,21 @@ Snake::Snake(Point head, Master master, unsigned int colour, CLogger *logger)
 void Snake::placeOnScreen()
 {
     //logger->Write(FromSnakepit, LogDebug, "Placing snake head at %d/%d", head.x, head.y);
+    switch (lastDirection)
+    {
+        case UP:
+            myHead.set(sc_snake_head, colour);
+            break;
+        case DOWN:
+            myHead.set(sc_snake_head_down, colour);
+            break;
+        case LEFT:
+            myHead.set(sc_snake_head, colour);
+            break;
+        case RIGHT:
+            myHead.set(sc_snake_head, colour);
+            break;
+    }
     sc_snake_pit[head.y][head.x].set(myHead);
 }
 
@@ -102,12 +118,13 @@ void Snake::makeMove(Direction direction)
     // Clear the current position
     sc_snake_pit[current.y][current.x].set(sc_empty);
 
+    // Save the direction
+    lastDirection = direction;
+
     // Place the head on the screen
     head = next;
     placeOnScreen();
 
-    // Save the direction
-    lastDirection = direction;
 }
 
 Snake::Direction Snake::generateMove()
@@ -627,13 +644,16 @@ void Game::draw_char(const unsigned char *contents, unsigned int colour, unsigne
             }
         
             // Actually update the pixel (or pixels if zooming)
-            for (int ii = 0; ii < ZOOM; ii++)
+            for (int jj = 0; jj < ZOOM_Y; jj++)
             {
-                int x_coords;
-                int y_coords;
-                x_coords = SCREEN_COL_OFFSET + x * CHAR_SIZE * ZOOM + (xx * ZOOM) + ii;
-                y_coords = SCREEN_ROW_OFFSET + y * CHAR_SIZE * ZOOM + (yy * ZOOM) + ii;
-                screen.SetPixel(x_coords, y_coords, updateColour);
+                for (int ii = 0; ii < ZOOM_X; ii++)
+                {
+                    int x_coords;
+                    int y_coords;
+                    x_coords = SCREEN_COL_OFFSET + x * CHAR_SIZE * ZOOM_X + (xx * ZOOM_X) + ii;
+                    y_coords = SCREEN_ROW_OFFSET + y * CHAR_SIZE * ZOOM_Y + (yy * ZOOM_Y) + jj;
+                    screen.SetPixel(x_coords, y_coords, updateColour);
+                }
             }
 
             // Move to next pixel
