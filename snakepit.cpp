@@ -502,14 +502,19 @@ void Game::go()
     run = true;
     while (run)
     {
-        for (int ii = 0; ii < NUM_SNAKES; ii++)
+        timer.MsDelay(1000/moves_per_s/(NUM_SNAKES+1));
+        for (int ii = 0; ii < NUM_SNAKES+1; ii++)
         {
-            snake[ii].takeTurn();
+            if (ii < NUM_SNAKES)
+            {
+                snake[ii].takeTurn();
+            }
+            else
+            {
+                player.takeTurn();
+            }
             render_snake_pit();
-            timer.MsDelay(1000/moves_per_s/(NUM_SNAKES+1));
         }
-        player.takeTurn();
-        render_snake_pit();
     }
 
     logger.Write(FromSnakepit, LogNotice, "Game::run() exited");
