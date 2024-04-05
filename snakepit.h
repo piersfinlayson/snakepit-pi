@@ -33,7 +33,7 @@ const unsigned int SNAKE_COLOURS[NUM_SNAKES] =
     0x0000aa, // blue
     0xaaaa00  // yellow
 };
-#define PLAYER_COLOUR 0xaaaaaa
+#define PLAYER_COLOUR 0xbbbbbb
 #define EGG_COLOUR 0xaa5555
 #define EMPTY_COLOUR 0x000000
 
@@ -70,7 +70,7 @@ public:
     void set(ScreenChar ch, unsigned int overrideColour);
 };
 
-const unsigned char CHAR_EGG[CHAR_SIZE] = {0x3e, 0x41, 0x41, 0x41, 0x41, 0x41, 0x3e, 0x00};
+const unsigned char CHAR_EGG[CHAR_SIZE] = {0x3c, 0x42, 0x42, 0x42, 0x42, 0x42, 0x3c, 0x00};
 const unsigned char CHAR_SNAKE_HEAD[CHAR_SIZE] = {0x3e, 0x41, 0x55, 0x41, 0x41, 0x41, 0x3e, 0x00};
 const unsigned char CHAR_SNAKE_HEAD_DOWN[CHAR_SIZE] = {0x7e, 0x5e, 0x52, 0x7a, 0x3a, 0x1a, 0x1a, 0x00};
 //const unsigned char CHAR_SNAKE_HEAD_UP[CHAR_SIZE] = {0x, 0x, 0x, 0x, 0x, 0x, 0x, 0x};
@@ -135,12 +135,15 @@ private:
     Player* player;
     Snake** snake;
     void get_keyboard();
+    void reset_game();
     Player* init_player();
     Snake** init_snakes();
     void reset_player();
     void reset_snakes();
     void init_snake_pit();
     void render_snake_pit();
+    void render_cell(Point cellPos);
+    void render_cells(Point *cellPos, unsigned int num);
     void draw_char(const unsigned char *contents, unsigned int colour, unsigned char attr, int x, int y);
 };
 

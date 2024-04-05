@@ -4,7 +4,11 @@ static int num_eggs;
 static unsigned int moves_per_s = 5;
 volatile static char last_key_pressed = 0;
 static CLogger *glogger = nullptr;
-static boolean run = false;
+static bool run = false;
+static bool playerEaten = false;
+
+static Point cellsChanged[SNAKE_PIT_ROWS * SNAKE_PIT_COLS];
+static unsigned int numCellsChanged = 0;
 
 static const char FromSnakepit[] = "snakepit";
 
@@ -85,7 +89,14 @@ void Snake::placeOnScreen()
             myHead.set(sc_snake_head, colour);
             break;
     }
+    if (sc_snake_pit[head.y][head.x].colour == PLAYER_COLOUR)
+    {
+        logger->Write(FromSnakepit, LogDebug, "Snake just ate player");
+        playerEaten = true;
+    }
     sc_snake_pit[head.y][head.x].set(myHead);
+    cellsChanged[numCellsChanged] = head;
+    numCellsChanged++;
 }
 
 void Snake::takeTurn()
@@ -117,6 +128,8 @@ void Snake::makeMove(Direction direction)
 
     // Clear the current position
     sc_snake_pit[current.y][current.x].set(sc_empty);
+    cellsChanged[numCellsChanged] = current;
+    numCellsChanged++;
 
     // Save the direction
     lastDirection = direction;
@@ -231,7 +244,7 @@ Snake::Direction Snake::generateMove()
             directionColour = sc_snake_pit[directionPos.y][directionPos.x].colour;
 
             // Non-master snakes can only go into empty cells, or back over themselves
-            if ((directionColour != EMPTY_COLOUR) && (directionColour != colour))
+            if ((directionColour != EMPTY_COLOUR) && (directionColour != colour) && (directionColour != PLAYER_COLOUR))
             {
                 allowed[ii] = false;
             }
@@ -348,6 +361,9 @@ void Player::placeOnScreen()
     }
     //logger->Write(FromSnakepit, LogDebug, "Placing player at %d/%d", pos.x, pos.y);
     sc_snake_pit[pos.y][pos.x].set(player_char);
+    cellsChanged[numCellsChanged] = pos;
+    numCellsChanged++;
+
 }
 
 void Player::takeTurn()
@@ -396,6 +412,9 @@ void Player::takeTurn()
                 (sc_snake_pit[next.y][next.x].colour == EMPTY_COLOUR))
             {
                 sc_snake_pit[pos.y][pos.x].set(sc_empty);
+                cellsChanged[numCellsChanged] = pos;
+                numCellsChanged++;
+
                 pos = next;
                 // Player is updated below - as even if they don't move we want to change animations
             }
@@ -449,6 +468,8 @@ void Game::go()
 {
     logger.Write(FromSnakepit, LogDebug, "Game started");
 
+GAME_START:
+
     // (Re-)initialise the snake pit
     init_snake_pit();
 
@@ -466,14 +487,14 @@ void Game::go()
     run = true;
     while (run)
     {
-        timer.MsDelay(1000/moves_per_s/(NUM_SNAKES+1));
         for (int ii = 0; ii < NUM_SNAKES+1; ii++)
         {
+            timer.MsDelay(1000/moves_per_s/(NUM_SNAKES+1));
             if (ii < NUM_SNAKES)
             {
                 snake[ii]->takeTurn();
             }
-            else
+            else if (!playerEaten)
             {
                 player->takeTurn();
             }
@@ -481,11 +502,34 @@ void Game::go()
             {
                 logger.Write(FromSnakepit, LogDebug, "All eggs eaten");
             }
-            render_snake_pit();
+            render_cells(cellsChanged, numCellsChanged);
+            // Not deleting cellsChanged - may be memory leak
+            numCellsChanged = 0;
+            if (playerEaten and (last_key_pressed == 's'))
+            {
+                while (last_key_pressed)
+                {
+                    // Wait for s key to be released
+                    timer.MsDelay(50);
+                }
+                logger.Write(FromSnakepit, LogDebug, "Game restarted");
+                reset_game();
+                goto GAME_START;
+            }
         }
     }
 
     logger.Write(FromSnakepit, LogDebug, "Game::run() exited");
+}
+
+void Game::reset_game()
+{
+    playerEaten = false;
+    run = false;
+    numCellsChanged = 0;
+    num_eggs = 0;
+    reset_player();
+    reset_snakes();
 }
 
 Player* Game::init_player()
@@ -590,6 +634,20 @@ void Game::render_snake_pit()
     }
 }
 
+void Game::render_cell(Point cellPos)
+{
+    draw_char(sc_snake_pit[cellPos.y][cellPos.x].contents, sc_snake_pit[cellPos.y][cellPos.x].colour, 0, cellPos.x, cellPos.y);
+}
+
+void Game::render_cells(Point *cellPos, unsigned int num)
+{
+    for (unsigned int ii = 0; ii < num; ii++)
+    {
+        render_cell(cellPos[ii]);
+    }
+}
+
+
 void Game::draw_char(const unsigned char *contents, unsigned int colour, unsigned char attr, int x, int y)
 {
     TScreenColor screen_colour;
@@ -616,6 +674,7 @@ void Game::draw_char(const unsigned char *contents, unsigned int colour, unsigne
         case 0xaaaa00:
             screen_colour = YELLOW_COLOR;
             break;
+        case 0xbbbbbb: // PLAYER_COLOUR
         case 0xaaaaaa:
             screen_colour = WHITE_COLOR;
             break;
