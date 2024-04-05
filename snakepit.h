@@ -21,7 +21,7 @@
 
 // How many times bigger to make the game image
 #define ZOOM_X 4
-#define ZOOM_Y 2
+#define ZOOM_Y 3
 
 const unsigned int SNAKE_COLOURS[NUM_SNAKES] =
 {
