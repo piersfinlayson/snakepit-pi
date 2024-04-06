@@ -53,6 +53,10 @@ void ScreenChar::set(ScreenChar ch, bool reverse)
     if (colour == EGG_COLOUR)
     {
         num_eggs--;
+        if (num_eggs == 0)
+        {
+            LOGNOTE("All eggs eaten");
+        }
     }
     assert(num_eggs >= 0);
 

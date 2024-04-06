@@ -92,10 +92,6 @@ GAME_START:
             {
                 player->takeTurn();
             }
-            if (num_eggs <= 0)
-            {
-                LOGNOTE("All eggs eaten");
-            }
 
             // Re-render the snake-pit
             // Will only re-render the changed cells if there are fewer than MAX_CHANGE_CELLS
