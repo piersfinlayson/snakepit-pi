@@ -202,7 +202,7 @@ void Game::init_snakes()
         LOGDBG("Initialise snake %d at %d/%d", ii, pos.x, pos.y);
         assert((pos.x >= 0) && (pos.x < SNAKE_PIT_COLS));
         assert((pos.y >= 0) && (pos.y < SNAKE_PIT_ROWS));
-        snake[ii]->head = pos;
+        snake[ii]->init(pos);
 
         pos.x += 6;
         if (pos.x > (SNAKE_PIT_COLS-3))
@@ -352,6 +352,8 @@ void Game::render_cells(Point *cellPos, unsigned int num)
         render_cell(cellPos[ii]);
     }
 }
+
+#include <circle/debug.h>
 
 void Game::draw_char(const unsigned char *contents, 
                      unsigned int colour,

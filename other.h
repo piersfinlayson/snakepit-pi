@@ -36,6 +36,25 @@
 
 #define SNAKE_BODY_LEN 20
 
+#define ASSERT(X)   if (!(X))                                                                   \
+                    {                                                                           \
+                        LOGERR("Assertion failed: " #X);                                        \
+                        uintptr ulStackPtr;                                                     \
+                        uintptr *pStackPtr = &ulStackPtr;                                       \
+                        for (unsigned i = 0; i < 64; i++, pStackPtr++)                          \
+                        {                                                                       \
+                            extern unsigned char _etext;                                        \
+                                                                                                \
+                            if (   *pStackPtr >= MEM_KERNEL_START                               \
+                                && *pStackPtr < (uintptr) &_etext                               \
+                                && (*pStackPtr & 3) == 0)                                       \
+                            {                                                                   \
+                                LOGNOTE("stack[%u] is 0x%lX", i, (unsigned long) *pStackPtr);   \
+                            }                                                                   \
+                        }                                                                       \
+                        assert(false);                                                          \
+                    }
+
 struct Point
 {
     int x;
@@ -87,6 +106,7 @@ const unsigned char CHAR_SNAKE_HEAD_DOWN[CHAR_SIZE] = {0x7e, 0x5e, 0x52, 0x7a, 0
 const unsigned char CHAR_SNAKE_HEAD_UP[CHAR_SIZE] = {0x00, 0x58, 0x58, 0x5c, 0x5e, 0x4a, 0x7a, 0x7e};
 const unsigned char CHAR_SNAKE_HEAD_RIGHT[CHAR_SIZE] = {0x00, 0xf0, 0x98, 0xfe, 0xde, 0xc0, 0xfe, 0x00};
 const unsigned char CHAR_SNAKE_HEAD_LEFT[CHAR_SIZE] = {0x00, 0x0f, 0x19, 0x7f, 0xfb, 0x03, 0x7f, 0x00};
+const unsigned char CHAR_SNAKE_BODY[CHAR_SIZE] = {0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00};
 const unsigned char CHAR_PLAYER_MOUTH_OPEN[CHAR_SIZE] = {0x7e, 0x99, 0xff, 0xc3, 0x81, 0xc3, 0xe7, 0x7e};
 const unsigned char CHAR_PLAYER_MOUTH_CLOSED[CHAR_SIZE] = {0x7e, 0x99, 0x99, 0xff, 0xbd, 0xc3, 0xff, 0x7e};
 const unsigned char CHAR_EMPTY[CHAR_SIZE] = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -94,8 +114,9 @@ ScreenChar sc_egg(CHAR_EGG, EGG_COLOUR);
 ScreenChar sc_empty(CHAR_EMPTY, EMPTY_COLOUR);
 ScreenChar sc_snake_head_down(CHAR_SNAKE_HEAD_DOWN, 0);
 ScreenChar sc_snake_head_up(CHAR_SNAKE_HEAD_UP, 0);
-ScreenChar sc_snake_head_left(CHAR_SNAKE_HEAD_LEFT, 0);
 ScreenChar sc_snake_head_right(CHAR_SNAKE_HEAD_RIGHT, 0);
+ScreenChar sc_snake_head_left(CHAR_SNAKE_HEAD_LEFT, 0);
+ScreenChar sc_snake_body(CHAR_SNAKE_BODY, 0);
 ScreenChar sc_player_mouth_open(CHAR_PLAYER_MOUTH_OPEN, PLAYER_COLOUR);
 ScreenChar sc_player_mouth_closed(CHAR_PLAYER_MOUTH_CLOSED, PLAYER_COLOUR);
 ScreenChar sc_snake_pit[SNAKE_PIT_ROWS][SNAKE_PIT_COLS];
@@ -116,6 +137,7 @@ extern ScreenChar sc_snake_head_down;
 extern ScreenChar sc_snake_head_up;
 extern ScreenChar sc_snake_head_left;
 extern ScreenChar sc_snake_head_right;
+extern ScreenChar sc_snake_body;
 extern ScreenChar sc_player_mouth_open;
 extern ScreenChar sc_player_mouth_closed;
 extern ScreenChar sc_snake_pit[SNAKE_PIT_ROWS][SNAKE_PIT_COLS];
@@ -194,13 +216,14 @@ public:
 
     Snake();
     Snake(Point head, Master master, unsigned int colour);
+    void init(Point pos);
     void placeOnScreen();
     void takeTurn();
 
 private:
     Direction lastDirection;
     ScreenChar myHead;
-    ScreenChar bodyPart[SNAKE_BODY_LEN];
+    BodyPart bodyPart[SNAKE_BODY_LEN];
     unsigned int bodyLen;
     int bodyHead;
 

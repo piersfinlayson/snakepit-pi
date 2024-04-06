@@ -4,6 +4,8 @@ LOGMODULE("snakepit-other");
 
 void changeCell(Point cellPos, ScreenChar ch)
 {
+    assert(cellPos.x >= 0 && cellPos.y >= 0);
+
     sc_snake_pit[cellPos.y][cellPos.x].set(ch);
     if (numCellsChanged < MAX_CHANGED_CELLS)
     {
@@ -73,23 +75,59 @@ Snake::Snake(Point head, Master master, unsigned int colour)
     myHead = sc_snake_head_down;
     myHead.colour = colour;
     lastDirection = Snake::DOWN; // Snakes always start in top left of their hole, as if they were going down
-    bodyPart[bodyLen].set(myHead, colour);
-    bodyHead = bodyLen;
-    bodyLen++;
+    bodyPart[0].bodyChar.set(myHead, colour);
+    bodyPart[0].pos = head;
+    bodyHead = 0;
+    bodyLen = 1;
+}
+
+void Snake::init(Point pos)
+{
+    head = pos;
+    bodyPart[bodyHead].pos = pos;
 }
 
 void Snake::updateBody()
 {
+    assert(bodyLen > 0);
+    int oldBodyHead = bodyHead;
+
     bodyHead++;
     if (bodyHead >= SNAKE_BODY_LEN)
     {
         bodyHead = 0;
     }
-    bodyPart[bodyHead].set(myHead, colour);
-    bodyLen++;
-    if (bodyLen >= SNAKE_BODY_LEN)
+
+    if (bodyLen == SNAKE_BODY_LEN)
     {
-        bodyLen = SNAKE_BODY_LEN;
+        // Clear out old tail - bodyHead currently points to the tail
+        // But only if there's nothing on top of it.
+        Point *tailPos = &(bodyPart[bodyHead].pos);
+        bool clear = true;
+        for (int ii = 0; ii < SNAKE_BODY_LEN; ii++)
+        {
+            if ((*tailPos == bodyPart[ii].pos) && (ii != bodyHead))
+            {
+                clear = false;
+                break;
+            }
+        }
+        if (clear)
+        {
+            changeCell(*tailPos, sc_empty);
+        }
+    }
+
+    // Change the old head to be a body part
+    bodyPart[oldBodyHead].bodyChar.set(sc_snake_body, colour);
+    changeCell(bodyPart[oldBodyHead].pos, bodyPart[oldBodyHead].bodyChar);
+
+    // Set the new head position
+    bodyPart[bodyHead].bodyChar.set(myHead, colour);
+    bodyPart[bodyHead].pos = head;
+    if (bodyLen < SNAKE_BODY_LEN)
+    {
+        bodyLen++;
     }
 }
 
@@ -130,7 +168,7 @@ void Snake::takeTurn()
 
 void Snake::makeMove(Direction direction)
 {
-    Point current = head;
+    //Point current = head;
     Point next = head;
 
     // Move the head
@@ -150,8 +188,8 @@ void Snake::makeMove(Direction direction)
             break;
     }
 
-    // Clear the current position
-    changeCell(current, sc_empty);
+    // Clear the current position - no longer required, as we update the body
+    // changeCell(current, sc_empty);
 
     // Save the direction
     lastDirection = direction;
