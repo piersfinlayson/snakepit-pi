@@ -109,7 +109,7 @@ GAME_START:
                     // Wait for s key to be released
                     timer->MsDelay(50);
                 }
-                LOGNOTE("Game restarted");
+                LOGDBG("Game restarted");
                 goto GAME_START;
             }
 
