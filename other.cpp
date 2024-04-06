@@ -50,7 +50,7 @@ void ScreenChar::set(ScreenChar ch, bool reverse)
     {
         num_eggs++;
     }
-    else if ((ch.colour == EMPTY_COLOUR) && (colour == EGG_COLOUR))
+    if (colour == EGG_COLOUR)
     {
         num_eggs--;
     }

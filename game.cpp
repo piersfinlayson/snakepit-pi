@@ -94,7 +94,7 @@ GAME_START:
             }
             if (num_eggs <= 0)
             {
-                LOGDBG("All eggs eaten");
+                LOGNOTE("All eggs eaten");
             }
 
             // Re-render the snake-pit
@@ -111,6 +111,11 @@ GAME_START:
                 }
                 LOGDBG("Game restarted");
                 goto GAME_START;
+            }
+
+            if (last_key_pressed == 'e')
+            {
+                LOGNOTE("Remaining eggs: %d", num_eggs);
             }
 
             while (last_key_pressed == 'p')
