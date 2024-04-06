@@ -6,7 +6,7 @@ Game::Game(CDeviceNameService *deviceNameService,
            CScreenDevice *screen,
            CTimer *timer,
            CUSBHCIDevice *usbDevice)
-    : deviceNameService(deviceNameService), screen(screen), timer(timer), usbDevice(usbDevice), keyboard(nullptr), player(init_player()), snake(init_snakes())
+    : deviceNameService(deviceNameService), screen(screen), timer(timer), usbDevice(usbDevice), keyboard(nullptr), player(create_player()), snake(create_snakes())
 {
     LOGDBG("Game created");
 }
@@ -26,12 +26,7 @@ void Game::get_keyboard(bool waitTilFound)
 
 bool Game::get_keyboard()
 {
-    bool found = false;
-    if (keyboard != nullptr)
-    {
-        found = true;
-    }
-    else
+    if (keyboard == nullptr)
     {
         boolean updated = usbDevice->UpdatePlugAndPlay();
         if (updated)
@@ -46,7 +41,7 @@ bool Game::get_keyboard()
             }
         }
     }
-    return found;
+    return (keyboard != nullptr);
 }
 
 void KeyPressedHandler(const char *string)
@@ -77,23 +72,12 @@ void KeyboardShutdownHandler()
 
 void Game::go()
 {
+    run = true;
+
 GAME_START:
-
-    // (Re-)initialise the snake pit
-    init_snake_pit();
-
-    // Place the player and snakes on the screen
-    player->placeOnScreen();
-    for (int ii = 0; ii < NUM_SNAKES; ii++)
-    {
-        snake[ii]->placeOnScreen();
-    }
-
-    // Draw the snake pit
-    render_snake_pit();
+    reset_game();
 
     // Round robin, with the player and each snake taking turns to move
-    run = true;
     LOGNOTE("Game started");
     while (run)
     {
@@ -124,47 +108,96 @@ GAME_START:
                     // Wait for s key to be released
                     timer->MsDelay(50);
                 }
-                LOGDBG("Game restarted");
-                reset_game();
+                LOGNOTE("Game restarted");
                 goto GAME_START;
+            }
+
+            while (last_key_pressed == 'p')
+            {
+                LOGDBG("Game paused");
+                timer->MsDelay(50);
+            }
+
+            if (last_key_pressed == 'r')
+            {
+                LOGNOTE("Reset requested");
+                timer->MsDelay(1000);
+                run = false;
+                break;
             }
         }
     }
 
-    LOGDBG("Game::run() exited");
+    LOGNOTE("Main game routine exited");
 }
 
 void Game::reset_game()
 {
+    // Reset game variables
     playerEaten = false;
-    run = false;
     numCellsChanged = 0;
     num_eggs = 0;
-    reset_player();
-    reset_snakes();
+    moves_per_s = DEFAULT_MOVES_PER_S;
+
+    // Reset player and snakes
+    init_player();
+    init_snakes();
+
+    // Reset the snake pit
+    init_snake_pit();
+
+    // Place the player and snakes on the screen
+    player->placeOnScreen();
+    for (int ii = 0; ii < NUM_SNAKES; ii++)
+    {
+        snake[ii]->placeOnScreen();
+    }
+
+    // Draw the snake pit
+    render_snake_pit();
 }
 
-Player* Game::init_player()
+Player* Game::create_player()
 {
-    Point pos = {19, 17};
-    LOGDBG("Initialising player at %d/%d", pos.x, pos.y);
-    Player* player = new Player(pos);
+    LOGDBG("Creating player");
+    Player* player = new Player(Point{-1, -1});
     return player;
 }
 
-Snake** Game::init_snakes()
+void Game::init_player()
+{
+    LOGDBG("Initialising player");
+    assert(player != nullptr);
+    player->pos = {19, 17};
+}
+
+Snake** Game::create_snakes()
 {
     Snake** snake = new Snake*[NUM_SNAKES];
 
+    LOGDBG("Creating snakes");
+
+    for (int ii = 0; ii < NUM_SNAKES; ii++)
+    {
+        LOGDBG("Create snake %d at %d/%d", ii);
+        Snake::Master master = (ii == 0 ? Snake::MASTER : Snake::NOT_MASTER);
+        snake[ii] = new Snake({-1, -1}, master, SNAKE_COLOURS[ii]);
+    }
+
+    return snake;
+}
+
+void Game::init_snakes()
+{
     LOGDBG("Initialising snakes");
 
     Point pos = Point{1, 2};
     for (int ii = 0; ii < NUM_SNAKES; ii++)
     {
         LOGDBG("Initialise snake %d at %d/%d", ii, pos.x, pos.y);
-        Snake::Master master = (ii == 0 ? Snake::MASTER : Snake::NOT_MASTER);
-        snake[ii] = new Snake(pos, master, SNAKE_COLOURS[ii]);
-        LOGDBG("Snake %d: %p at %d/%d", ii, snake[ii], snake[ii]->head.x, snake[ii]->head.y);
+        assert((pos.x >= 0) && (pos.x < SNAKE_PIT_COLS));
+        assert((pos.y >= 0) && (pos.y < SNAKE_PIT_ROWS));
+        snake[ii]->head = pos;
 
         pos.x += 6;
         if (pos.x > (SNAKE_PIT_COLS-3))
@@ -173,29 +206,6 @@ Snake** Game::init_snakes()
             pos.y += 15;
         }
     }
-
-    for (int ii = 0; ii < NUM_SNAKES; ii++)
-    {
-        LOGDBG("Snake %d: %p at %d/%d", ii, snake[ii], snake[ii]->head.x,  snake[ii]->head.y);
-    }
-    return snake;
-}
-
-void Game::reset_player()
-{
-    LOGDBG("Resetting player");
-    delete player;
-    player = init_player();
-}
-
-void Game::reset_snakes()
-{
-    LOGDBG("Resetting snakes");
-    for (int ii = 0; ii < NUM_SNAKES; ii++)
-    {
-        delete snake[ii];
-    }
-    snake = init_snakes();
 }
 
 void Game::init_snake_pit()

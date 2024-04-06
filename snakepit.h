@@ -12,9 +12,11 @@
 #include "other.h"
 #include "game.h"
 
+#define DEFAULT_MOVES_PER_S 5
+
 #ifdef GAME_CPP
 int num_eggs = 0;
-unsigned int moves_per_s = 5;
+unsigned int moves_per_s = DEFAULT_MOVES_PER_S;
 volatile char last_key_pressed = 0;
 bool run = false;
 bool playerEaten = false;

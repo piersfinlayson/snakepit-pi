@@ -27,8 +27,10 @@ private:
     void get_keyboard(bool waitTilFound);
     bool get_keyboard();
     void reset_game();
-    Player* init_player();
-    Snake** init_snakes();
+    Player* create_player();
+    void init_player();
+    Snake** create_snakes();
+    void init_snakes();
     void reset_player();
     void reset_snakes();
     void init_snake_pit();

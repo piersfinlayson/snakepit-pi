@@ -88,8 +88,8 @@ TShutdownMode CKernel::Run (void)
 		m_Logger.Write (FromKernel, LogError, "Game initialization failed");
 	}
 
-	m_Logger.Write (FromKernel, LogError, "Halting");
+	m_Logger.Write (FromKernel, LogError, "Rebooting");
 
-	return ShutdownHalt;
+	return ShutdownReboot;
 }
 
