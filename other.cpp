@@ -70,7 +70,7 @@ void ScreenChar::set(ScreenChar ch, unsigned int overrideColour, bool reverse)
 Snake::Snake(Point head, Master master, unsigned int colour) 
     : head(head), master(master), colour(colour)
 {
-    myHead = sc_snake_head;
+    myHead = sc_snake_head_down;
     myHead.colour = colour;
     lastDirection = Snake::DOWN; // Snakes always start in top left of their hole, as if they were going down
 }
@@ -81,16 +81,16 @@ void Snake::placeOnScreen()
     switch (lastDirection)
     {
         case UP:
-            myHead.set(sc_snake_head, colour);
+            myHead.set(sc_snake_head_up, colour);
             break;
         case DOWN:
             myHead.set(sc_snake_head_down, colour);
             break;
         case LEFT:
-            myHead.set(sc_snake_head, colour);
+            myHead.set(sc_snake_head_left, colour);
             break;
         case RIGHT:
-            myHead.set(sc_snake_head, colour);
+            myHead.set(sc_snake_head_right, colour);
             break;
     }
     if (sc_snake_pit[head.y][head.x].colour == PLAYER_COLOUR)
