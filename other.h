@@ -8,7 +8,6 @@
 #define ZOOM_X 4
 #define ZOOM_Y 3
 
-
 #define SCREEN_WIDTH 1920
 #define SCREEN_HEIGHT 1080
 
@@ -34,6 +33,8 @@
 // Size in pixels of border around snake pit and above score bar
 #define BORDER_WIDTH 100
 #define TSCREEN_BORDER_COLOUR RED_COLOR
+
+#define SNAKE_BODY_LEN 20
 
 struct Point
 {
@@ -161,9 +162,10 @@ extern const ScreenChar CHAR_DIGITS[10];
 
 void changeCell(Point cellPos, ScreenChar ch);
 
+enum Animation { OPEN, CLOSED };
+
 class Player {
 public:
-    enum Animation { OPEN, CLOSED };
 
     Point pos;
     Animation animation;
@@ -171,6 +173,12 @@ public:
     Player(Point pos);
     void placeOnScreen();
     void takeTurn();
+};
+
+struct BodyPart
+{
+    ScreenChar bodyChar;
+    Point pos;
 };
 
 class Snake
@@ -182,6 +190,7 @@ public:
     Point head;
     const Master master; // Can eat eggs
     const unsigned int colour;
+    Animation animation;
 
     Snake();
     Snake(Point head, Master master, unsigned int colour);
@@ -191,7 +200,11 @@ public:
 private:
     Direction lastDirection;
     ScreenChar myHead;
+    ScreenChar bodyPart[SNAKE_BODY_LEN];
+    unsigned int bodyLen;
+    int bodyHead;
 
+    void updateBody();
     void makeMove(Direction direction);
     Direction generateMove();
 };

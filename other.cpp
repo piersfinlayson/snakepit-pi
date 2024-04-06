@@ -68,31 +68,53 @@ void ScreenChar::set(ScreenChar ch, unsigned int overrideColour, bool reverse)
 }
 
 Snake::Snake(Point head, Master master, unsigned int colour) 
-    : head(head), master(master), colour(colour)
+    : head(head), master(master), colour(colour), animation(OPEN), bodyLen(0)
 {
     myHead = sc_snake_head_down;
     myHead.colour = colour;
     lastDirection = Snake::DOWN; // Snakes always start in top left of their hole, as if they were going down
+    bodyPart[bodyLen].set(myHead, colour);
+    bodyHead = bodyLen;
+    bodyLen++;
+}
+
+void Snake::updateBody()
+{
+    bodyHead++;
+    if (bodyHead >= SNAKE_BODY_LEN)
+    {
+        bodyHead = 0;
+    }
+    bodyPart[bodyHead].set(myHead, colour);
+    bodyLen++;
+    if (bodyLen >= SNAKE_BODY_LEN)
+    {
+        bodyLen = SNAKE_BODY_LEN;
+    }
 }
 
 void Snake::placeOnScreen()
 {
     LOGDBG("Placing snake head at %d/%d", head.x, head.y);
+    ScreenChar *ch = &sc_snake_head_down;
     switch (lastDirection)
     {
         case UP:
-            myHead.set(sc_snake_head_up, colour);
+            ch = &sc_snake_head_up;
             break;
         case DOWN:
-            myHead.set(sc_snake_head_down, colour);
+            ch = &sc_snake_head_down;
             break;
         case LEFT:
-            myHead.set(sc_snake_head_left, colour);
+            ch = &sc_snake_head_left;
             break;
         case RIGHT:
-            myHead.set(sc_snake_head_right, colour);
+            ch = &sc_snake_head_right;
             break;
     }
+    myHead.set(*ch, colour);
+    updateBody();
+
     if (sc_snake_pit[head.y][head.x].colour == PLAYER_COLOUR)
     {
         LOGNOTE("Game over - player eaten");
@@ -345,13 +367,13 @@ Snake::Direction Snake::generateMove()
 }
 
 Player::Player(Point pos) 
-        : pos(pos), animation(Player::OPEN)
+        : pos(pos), animation(OPEN)
 {}
 
 void Player::placeOnScreen()
 {
     ScreenChar player_char;
-    if (animation == Player::OPEN)
+    if (animation == OPEN)
     {
         player_char = sc_player_mouth_open;
     }
@@ -365,13 +387,13 @@ void Player::placeOnScreen()
 
 void Player::takeTurn()
 {
-    if (animation == Player::OPEN)
+    if (animation == OPEN)
     {
-        animation = Player::CLOSED;
+        animation = CLOSED;
     }
     else
     {
-        animation = Player::OPEN;
+        animation = OPEN;
     }
 
     if (last_key_pressed != 0)

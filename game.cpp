@@ -368,7 +368,7 @@ void Game::draw_char(const unsigned char *contents,
             screen_colour = BLACK_COLOR;
             break;
         case 0x0000aa:
-            screen_colour = BLUE_COLOR;
+            screen_colour = BRIGHT_BLUE_COLOR;
             break;
         case 0x00aa00:
             screen_colour = GREEN_COLOR;
@@ -383,7 +383,7 @@ void Game::draw_char(const unsigned char *contents,
             screen_colour = MAGENTA_COLOR;
             break;
         case 0xaaaa00:
-            screen_colour = YELLOW_COLOR;
+            screen_colour = BRIGHT_YELLOW_COLOR;
             break;
         case PLAYER_COLOUR:
         case 0xaaaaaa:
