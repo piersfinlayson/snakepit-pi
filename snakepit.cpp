@@ -1,15 +1,15 @@
 #include "snakepit.h"
 
+LOGMODULE("snakepit");
+
 static int num_eggs;
 static unsigned int moves_per_s = 5;
 volatile static char last_key_pressed = 0;
 static bool run = false;
 static bool playerEaten = false;
 
-static Point cellsChanged[SNAKE_PIT_ROWS * SNAKE_PIT_COLS];
+static Point cellsChanged[MAX_CHANGED_CELLS];
 static unsigned int numCellsChanged = 0;
-
-LOGMODULE("snakepit");
 
 ScreenChar sc_egg(CHAR_EGG, EGG_COLOUR);
 ScreenChar sc_empty(CHAR_EMPTY, EMPTY_COLOUR);
@@ -18,6 +18,17 @@ ScreenChar sc_snake_head_down(CHAR_SNAKE_HEAD_DOWN, 0);
 ScreenChar sc_player_mouth_open(CHAR_PLAYER_MOUTH_OPEN, PLAYER_COLOUR);
 ScreenChar sc_player_mouth_closed(CHAR_PLAYER_MOUTH_CLOSED, PLAYER_COLOUR);
 ScreenChar sc_snake_pit[SNAKE_PIT_ROWS][SNAKE_PIT_COLS];
+
+void changeCell(Point cellPos, ScreenChar ch)
+{
+    sc_snake_pit[cellPos.y][cellPos.x].set(ch);
+    if (numCellsChanged < MAX_CHANGED_CELLS)
+    {
+        cellsChanged[numCellsChanged].x = cellPos.x;
+        cellsChanged[numCellsChanged].y = cellPos.y;
+    }
+    numCellsChanged++;
+}
 
 ScreenChar::ScreenChar()
     : colour(0)
@@ -72,7 +83,7 @@ Snake::Snake(Point head, Master master, unsigned int colour)
 
 void Snake::placeOnScreen()
 {
-    //LOGDBG("Placing snake head at %d/%d", head.x, head.y);
+    LOGDBG("Placing snake head at %d/%d", head.x, head.y);
     switch (lastDirection)
     {
         case UP:
@@ -90,12 +101,10 @@ void Snake::placeOnScreen()
     }
     if (sc_snake_pit[head.y][head.x].colour == PLAYER_COLOUR)
     {
-        LOGDBG("Snake just ate player");
+        LOGNOTE("Snake just ate player");
         playerEaten = true;
     }
-    sc_snake_pit[head.y][head.x].set(myHead);
-    cellsChanged[numCellsChanged] = head;
-    numCellsChanged++;
+    changeCell(head, myHead);
 }
 
 void Snake::takeTurn()
@@ -126,9 +135,7 @@ void Snake::makeMove(Direction direction)
     }
 
     // Clear the current position
-    sc_snake_pit[current.y][current.x].set(sc_empty);
-    cellsChanged[numCellsChanged] = current;
-    numCellsChanged++;
+    changeCell(current, sc_empty);
 
     // Save the direction
     lastDirection = direction;
@@ -358,11 +365,8 @@ void Player::placeOnScreen()
     {
         player_char = sc_player_mouth_closed;
     }
-    //LOGDBG("Placing player at %d/%d", pos.x, pos.y);
-    sc_snake_pit[pos.y][pos.x].set(player_char);
-    cellsChanged[numCellsChanged] = pos;
-    numCellsChanged++;
-
+    LOGDBG("Placing player at %d/%d", pos.x, pos.y);
+    changeCell(pos, player_char);
 }
 
 void Player::takeTurn()
@@ -378,7 +382,7 @@ void Player::takeTurn()
 
     if (last_key_pressed != 0)
     {
-        //LOGDBG("Player key pressed: %c", last_key_pressed);
+        LOGDBG("Player key pressed: %c", last_key_pressed);
     }
     Point current = pos;
     Point next = pos;
@@ -410,10 +414,7 @@ void Player::takeTurn()
             if ((sc_snake_pit[next.y][next.x].colour == EGG_COLOUR) ||
                 (sc_snake_pit[next.y][next.x].colour == EMPTY_COLOUR))
             {
-                sc_snake_pit[pos.y][pos.x].set(sc_empty);
-                cellsChanged[numCellsChanged] = pos;
-                numCellsChanged++;
-
+                changeCell(pos, sc_empty);
                 pos = next;
                 // Player is updated below - as even if they don't move we want to change animations
             }
@@ -429,7 +430,7 @@ Game::Game(CDeviceNameService *deviceNameService,
            CUSBHCIDevice *usbDevice)
     : deviceNameService(deviceNameService), screen(screen), timer(timer), usbDevice(usbDevice), keyboard(nullptr), player(init_player()), snake(init_snakes())
 {
-    LOGNOTE("Game created");
+    LOGDBG("Game created");
 }
 
 bool Game::init()
@@ -498,8 +499,6 @@ void KeyboardShutdownHandler()
 
 void Game::go()
 {
-    LOGDBG("Game started");
-
 GAME_START:
 
     // (Re-)initialise the snake pit
@@ -517,6 +516,7 @@ GAME_START:
 
     // Round robin, with the player and each snake taking turns to move
     run = true;
+    LOGNOTE("Game started");
     while (run)
     {
         for (int ii = 0; ii < NUM_SNAKES+1; ii++)
@@ -534,9 +534,11 @@ GAME_START:
             {
                 LOGDBG("All eggs eaten");
             }
-            render_cells(cellsChanged, numCellsChanged);
-            // Not deleting cellsChanged - may be memory leak
-            numCellsChanged = 0;
+
+            // Re-render the snake-pit
+            // Will only re-render the changed cells if there are fewer than MAX_CHANGE_CELLS
+            render_snake_pit();
+
             if (playerEaten and (last_key_pressed == 's'))
             {
                 while (last_key_pressed)
@@ -567,7 +569,7 @@ void Game::reset_game()
 Player* Game::init_player()
 {
     Point pos = {19, 17};
-    //LOGDBG("Initialising player at %d/%d", pos.x, pos.y);
+    LOGDBG("Initialising player at %d/%d", pos.x, pos.y);
     Player* player = new Player(pos);
     return player;
 }
@@ -576,15 +578,15 @@ Snake** Game::init_snakes()
 {
     Snake** snake = new Snake*[NUM_SNAKES];
 
-    //LOGDBG("Initialising snakes");
+    LOGDBG("Initialising snakes");
 
     Point pos = Point{1, 2};
     for (int ii = 0; ii < NUM_SNAKES; ii++)
     {
-        //LOGDBG("Initialise snake %d at %d/%d", ii, pos.x, pos.y);
+        LOGDBG("Initialise snake %d at %d/%d", ii, pos.x, pos.y);
         Snake::Master master = (ii == 0 ? Snake::MASTER : Snake::NOT_MASTER);
         snake[ii] = new Snake(pos, master, SNAKE_COLOURS[ii]);
-        //LOGDBG("Snake %d: %p at %d/%d", ii, snake[ii], snake[ii]->head.x, snake[ii]->head.y);
+        LOGDBG("Snake %d: %p at %d/%d", ii, snake[ii], snake[ii]->head.x, snake[ii]->head.y);
 
         pos.x += 6;
         if (pos.x > (SNAKE_PIT_COLS-3))
@@ -596,7 +598,7 @@ Snake** Game::init_snakes()
 
     for (int ii = 0; ii < NUM_SNAKES; ii++)
     {
-        //LOGDBG("Snake %d: %p at %d/%d", ii, snake[ii], snake[ii]->head.x,  snake[ii]->head.y);
+        LOGDBG("Snake %d: %p at %d/%d", ii, snake[ii], snake[ii]->head.x,  snake[ii]->head.y);
     }
     return snake;
 }
@@ -620,34 +622,34 @@ void Game::reset_snakes()
 
 void Game::init_snake_pit()
 {
-    //LOGDBG("Initialising snake pit");
+    LOGDBG("Initialising snake pit");
 
     // Fill the pit with eggs
-    //LOGDBG("Fill snake pit with eggs");
+    LOGDBG("Fill snake pit with eggs");
     ScreenChar *cell = &sc_snake_pit[0][0];
     for (int ii = 0; ii < (SNAKE_PIT_ROWS * SNAKE_PIT_COLS); ii++)
     {
         cell->set(sc_egg);
         cell++;
     }
-    //LOGDBG("Snake pit filled with %d eggs", num_eggs);
+    LOGDBG("Snake pit filled with %d eggs", num_eggs);
 
     // Clear 2x3 holes for each snake
-    //LOGDBG("Empty snake nests");
+    LOGDBG("Empty snake nests");
     ScreenChar empty;
     for (int ii = 0; ii < NUM_SNAKES; ii++)
     {
-        //LOGDBG("Processing snake %d: %p", ii, snake[ii]);
+        LOGDBG("Processing snake %d: %p", ii, snake[ii]);
         int x = snake[ii]->head.x;
         int y = snake[ii]->head.y;
-        //LOGDBG("Empty snake nest %d at %d/%d", ii, x, y);
+        LOGDBG("Empty snake nest %d at %d/%d", ii, x, y);
         for (int xx = x; xx < x+2; xx++)
         {
             for (int yy = y; yy < y+3; yy++)
             {
                 if ((xx < SNAKE_PIT_COLS) && (yy < SNAKE_PIT_ROWS))
                 {
-                    sc_snake_pit[yy][xx].set(sc_empty);
+                    changeCell(Point{xx, yy}, sc_empty);
                 }
             }
         }
@@ -657,13 +659,24 @@ void Game::init_snake_pit()
 
 void Game::render_snake_pit()
 {
-    for (int row = 0; row < SNAKE_PIT_ROWS; row++)
+    LOGDBG("Render snake pit - change cells: %d", numCellsChanged);
+    if (numCellsChanged < MAX_CHANGED_CELLS)
     {
-        for (int col = 0; col < SNAKE_PIT_COLS; col++)
+        LOGDBG("Render only changed cells");
+        render_cells(cellsChanged, numCellsChanged);
+    }
+    else
+    {
+        LOGDBG("Render entire snake pit");
+        for (int row = 0; row < SNAKE_PIT_ROWS; row++)
         {
-            draw_char(sc_snake_pit[row][col].contents, sc_snake_pit[row][col].colour, 0, col, row);
+            for (int col = 0; col < SNAKE_PIT_COLS; col++)
+            {
+                draw_char(sc_snake_pit[row][col].contents, sc_snake_pit[row][col].colour, 0, col, row);
+            }
         }
     }
+    numCellsChanged = 0;
 }
 
 void Game::render_cell(Point cellPos)

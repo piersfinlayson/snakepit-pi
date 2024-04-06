@@ -18,6 +18,7 @@
 
 #define SNAKE_PIT_ROWS 22
 #define SNAKE_PIT_COLS 22
+#define MAX_CHANGED_CELLS 16 // Max number of changed cells before full redraw required
 
 // How many times bigger to make the game image
 #define ZOOM_X 4
