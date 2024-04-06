@@ -1,3 +1,4 @@
+#define OTHER_CPP
 #include "snakepit.h"
 LOGMODULE("snakepit-other");
 
@@ -30,7 +31,18 @@ ScreenChar::ScreenChar(const unsigned char contents[CHAR_SIZE], unsigned int col
     }
 }
 
-void ScreenChar::set(ScreenChar ch)
+void ScreenChar::setDigit(unsigned int digit, bool reverse)
+{
+    assert(digit < 10);
+    set(CHAR_DIGITS[digit], reverse);
+}
+
+void ScreenChar::setDigit(unsigned int digit, unsigned int overrideColour, bool reverse)
+{
+    set(CHAR_DIGITS[digit], overrideColour, reverse);
+}
+
+void ScreenChar::set(ScreenChar ch, bool reverse)
 {
     if (ch.colour == EGG_COLOUR)
     {
@@ -44,14 +56,14 @@ void ScreenChar::set(ScreenChar ch)
 
     for (int ii = 0; ii < CHAR_SIZE; ii++)
     {
-        contents[ii] = ch.contents[ii];
+        contents[ii] = (!reverse) ? ch.contents[ii] : ~ch.contents[ii];
     }
     colour = ch.colour;
 }
 
-void ScreenChar::set(ScreenChar ch, unsigned int overrideColour)
+void ScreenChar::set(ScreenChar ch, unsigned int overrideColour, bool reverse)
 {
-    set(ch);
+    set(ch, reverse);
     colour = overrideColour;
 }
 
@@ -83,7 +95,7 @@ void Snake::placeOnScreen()
     }
     if (sc_snake_pit[head.y][head.x].colour == PLAYER_COLOUR)
     {
-        LOGNOTE("Snake just ate player");
+        LOGNOTE("Game over - player eaten");
         playerEaten = true;
     }
     changeCell(head, myHead);
@@ -396,6 +408,10 @@ void Player::takeTurn()
             if ((sc_snake_pit[next.y][next.x].colour == EGG_COLOUR) ||
                 (sc_snake_pit[next.y][next.x].colour == EMPTY_COLOUR))
             {
+                if (sc_snake_pit[next.y][next.x].colour == EGG_COLOUR)
+                {
+                    score += SCORE_EGG_INCREMENT;
+                }
                 changeCell(pos, sc_empty);
                 pos = next;
                 // Player is updated below - as even if they don't move we want to change animations

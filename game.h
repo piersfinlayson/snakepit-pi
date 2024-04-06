@@ -34,10 +34,18 @@ private:
     void reset_player();
     void reset_snakes();
     void init_snake_pit();
+    void build_score_bar();
+    void render_score_bar();
     void render_snake_pit();
     void render_cell(Point cellPos);
     void render_cells(Point *cellPos, unsigned int num);
-    void draw_char(const unsigned char *contents, unsigned int colour, unsigned char attr, int x, int y);
+    void draw_char(const unsigned char *contents,
+                   unsigned int colour,
+                   unsigned char attr,
+                   int x,
+                   int y,
+                   unsigned int screen_col_offset = SCREEN_COL_OFFSET,
+                   unsigned int screen_row_offset = SCREEN_ROW_OFFSET);
 };
 
 #endif // GAME_H

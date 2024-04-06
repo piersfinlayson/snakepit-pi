@@ -22,6 +22,8 @@ bool run = false;
 bool playerEaten = false;
 Point cellsChanged[MAX_CHANGED_CELLS];
 unsigned int numCellsChanged = 0;
+unsigned int score = 0;
+unsigned int highScore = 0;
 #else // GAME_CPP
 extern int num_eggs;
 extern unsigned int moves_per_s;
@@ -30,6 +32,8 @@ extern bool run;
 extern bool playerEaten;
 extern Point cellsChanged[];
 extern unsigned int numCellsChanged;
+extern unsigned int score;
+extern unsigned int highScore;
 #endif // GAME_CPP
 
 #endif // SNAKEPIT_H

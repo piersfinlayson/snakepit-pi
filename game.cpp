@@ -99,6 +99,7 @@ GAME_START:
 
             // Re-render the snake-pit
             // Will only re-render the changed cells if there are fewer than MAX_CHANGE_CELLS
+            render_score_bar();
             render_snake_pit();
 
             if (playerEaten and (last_key_pressed == 's'))
@@ -138,6 +139,8 @@ void Game::reset_game()
     numCellsChanged = 0;
     num_eggs = 0;
     moves_per_s = DEFAULT_MOVES_PER_S;
+    highScore = (score > highScore ? score : highScore);
+    score = 0;
 
     // Reset player and snakes
     init_player();
@@ -246,6 +249,52 @@ void Game::init_snake_pit()
     LOGDBG("Snake pit contains %d eggs", num_eggs);
 }
 
+void Game::build_score_bar()
+{
+    assert(SCORE_BAR_COLS >= (2*MAX_SCORE_DIGITS + 1));
+    assert(MAX_SCORE_DIGITS > 1);
+
+    unsigned int next_char = 0;
+
+    unsigned int tens = 1;
+    for (int ii = 0; ii < MAX_SCORE_DIGITS-1; ii++)
+    {
+        tens *= 10;
+    }
+
+    for (int loopTens = tens; loopTens >= 1; loopTens /= 10)
+    {
+        sc_score_bar[next_char++].setDigit(score/loopTens % 10, SCORE_COLOUR, true);
+    }
+
+    for (; next_char < (SCORE_BAR_COLS-MAX_SCORE_DIGITS); next_char++)
+    {
+        sc_score_bar[next_char].set(sc_empty, SCORE_COLOUR, true);
+    }
+
+    assert((next_char + MAX_SCORE_DIGITS) == SCORE_BAR_COLS);
+    for (int loopTens = tens; loopTens >= 1; loopTens /= 10)
+    {
+        sc_score_bar[next_char++].setDigit(highScore/loopTens % 10, SCORE_COLOUR, true);
+    }
+}
+
+void Game::render_score_bar()
+{
+    LOGDBG("Render score bar");
+    build_score_bar();
+    for (int ii = 0; ii < SCORE_BAR_COLS; ii++)
+    {
+        draw_char(sc_score_bar[ii].contents,
+                  sc_score_bar[ii].colour,
+                  0,
+                  ii,
+                  0,
+                  SCORE_BAR_COL_OFFSET,
+                  SCORE_BAR_ROW_OFFSET);
+    }
+}
+
 void Game::render_snake_pit()
 {
     LOGDBG("Render snake pit - change cells: %d", numCellsChanged);
@@ -281,8 +330,13 @@ void Game::render_cells(Point *cellPos, unsigned int num)
     }
 }
 
-
-void Game::draw_char(const unsigned char *contents, unsigned int colour, unsigned char attr, int x, int y)
+void Game::draw_char(const unsigned char *contents, 
+                     unsigned int colour,
+                     unsigned char attr,
+                     int x,
+                     int y,
+                     unsigned int screen_col_offset,
+                     unsigned int screen_row_offset)
 {
     TScreenColor screen_colour;
     switch (colour)
@@ -322,7 +376,7 @@ void Game::draw_char(const unsigned char *contents, unsigned int colour, unsigne
 
     for (int yy = 0; yy < CHAR_SIZE; yy++)
     {
-        unsigned char mask = 1;
+        unsigned char mask = 0x80;
         for (int xx = 0; xx < CHAR_SIZE; xx++)
         {
             // Either update the "pixel" to the screen colour or black
@@ -343,14 +397,14 @@ void Game::draw_char(const unsigned char *contents, unsigned int colour, unsigne
                 {
                     int x_coords;
                     int y_coords;
-                    x_coords = SCREEN_COL_OFFSET + x * CHAR_SIZE * ZOOM_X + (xx * ZOOM_X) + ii;
-                    y_coords = SCREEN_ROW_OFFSET + y * CHAR_SIZE * ZOOM_Y + (yy * ZOOM_Y) + jj;
+                    x_coords = screen_col_offset + x * CHAR_SIZE * ZOOM_X + (xx * ZOOM_X) + ii;
+                    y_coords = screen_row_offset + y * CHAR_SIZE * ZOOM_Y + (yy * ZOOM_Y) + jj;
                     screen->SetPixel(x_coords, y_coords, updateColour);
                 }
             }
 
             // Move to next pixel
-            mask <<= 1;
+            mask >>= 1;
         }
         contents++;
     }
