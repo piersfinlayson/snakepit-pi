@@ -8,12 +8,17 @@
 #define ZOOM_X 4
 #define ZOOM_Y 3
 
-// These are the offsets from the edge of the screen to top left corner of the snake pit
-#define SCREEN_ROW_OFFSET 300
-#define SCREEN_COL_OFFSET 800
 
 #define SCREEN_WIDTH 1920
 #define SCREEN_HEIGHT 1080
+
+#define COMPLETE_GAME_HEIGHT  ((2*BORDER_WIDTH) + (SNAKE_PIT_ROWS*CHAR_SIZE*ZOOM_Y) + (1*CHAR_SIZE*ZOOM_Y))
+#define COMPLETE_GAME_WIDTH   ((2*BORDER_WIDTH) + (SNAKE_PIT_COLS*CHAR_SIZE*ZOOM_X))
+#define GAME_OFFSET_FROM_TOP  ((SCREEN_HEIGHT - COMPLETE_GAME_HEIGHT) / 2)
+
+// These are the offsets from the edge of the screen to top left corner of the snake pit
+#define SCREEN_ROW_OFFSET  (GAME_OFFSET_FROM_TOP + BORDER_WIDTH + (1*CHAR_SIZE*ZOOM_Y))
+#define SCREEN_COL_OFFSET  800
 
 #define SNAKE_PIT_ROWS 22
 #define SNAKE_PIT_COLS 22
