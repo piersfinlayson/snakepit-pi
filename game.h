@@ -34,6 +34,7 @@ private:
     void reset_player();
     void reset_snakes();
     void init_snake_pit();
+    void render_border();
     void build_score_bar();
     void render_score_bar();
     void render_snake_pit();

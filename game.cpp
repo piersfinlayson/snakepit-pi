@@ -157,6 +157,8 @@ void Game::reset_game()
     }
 
     // Draw the snake pit
+    render_border();
+    render_score_bar();
     render_snake_pit();
 }
 
@@ -247,6 +249,27 @@ void Game::init_snake_pit()
         }
     }
     LOGDBG("Snake pit contains %d eggs", num_eggs);
+}
+
+void Game::render_border()
+{
+    assert((SCREEN_ROW_OFFSET-BORDER_WIDTH) >= 0);
+    assert((SCREEN_COL_OFFSET-BORDER_WIDTH) >= 0);
+    assert((SCREEN_ROW_OFFSET+BORDER_WIDTH+(SNAKE_PIT_ROWS+1)*CHAR_SIZE*ZOOM_Y) <= SCREEN_HEIGHT);
+    assert((SCREEN_COL_OFFSET+BORDER_WIDTH+SNAKE_PIT_COLS*CHAR_SIZE*ZOOM_X) <= SCREEN_WIDTH);
+
+    // Inefficient as we'll be drawing the area the score bar and snake pit will cover over
+    for (int ii = (SCREEN_COL_OFFSET - BORDER_WIDTH);
+         ii < (SCREEN_COL_OFFSET + BORDER_WIDTH + SNAKE_PIT_COLS*CHAR_SIZE*ZOOM_X);
+         ii++)
+    {
+        for (int jj = (SCREEN_ROW_OFFSET - BORDER_WIDTH - (1*CHAR_SIZE*ZOOM_Y));
+             jj < (SCREEN_ROW_OFFSET + BORDER_WIDTH + (SNAKE_PIT_ROWS+1)*CHAR_SIZE*ZOOM_Y);
+             jj++)
+        {
+            screen->SetPixel(ii, jj, TSCREEN_BORDER_COLOUR);
+        }
+    }
 }
 
 void Game::build_score_bar()
@@ -341,7 +364,7 @@ void Game::draw_char(const unsigned char *contents,
     TScreenColor screen_colour;
     switch (colour)
     {
-        case 0x000000:
+        case EMPTY_COLOUR:
             screen_colour = BLACK_COLOR;
             break;
         case 0x0000aa:
@@ -362,12 +385,12 @@ void Game::draw_char(const unsigned char *contents,
         case 0xaaaa00:
             screen_colour = YELLOW_COLOR;
             break;
-        case 0xbbbbbb: // PLAYER_COLOUR
+        case PLAYER_COLOUR:
         case 0xaaaaaa:
             screen_colour = WHITE_COLOR;
             break;
-        case 0xaa5555:
-            screen_colour = BRIGHT_RED_COLOR;
+        case EGG_COLOUR:
+            screen_colour = RED_COLOR;
             break;
         default:
             screen_colour = NORMAL_COLOR;
