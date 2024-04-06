@@ -84,6 +84,8 @@ Snake::Snake(Point head, Master master, unsigned int colour)
 void Snake::init(Point pos)
 {
     head = pos;
+    bodyHead = 0;
+    bodyLen = 1;
     bodyPart[bodyHead].pos = pos;
 }
 
