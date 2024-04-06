@@ -9,6 +9,7 @@
 #include <circle/usb/usbkeyboard.h>
 #include <circle/timer.h>
 #include <circle/bcmrandom.h>
+#include <circle/util.h>
 #include "other.h"
 #include "game.h"
 

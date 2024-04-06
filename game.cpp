@@ -217,6 +217,7 @@ void Game::init_snakes()
 void Game::init_snake_pit()
 {
     LOGDBG("Initialising snake pit");
+    memset(sc_snake_pit, 0, sizeof(sc_snake_pit));
 
     // Fill the pit with eggs
     LOGDBG("Fill snake pit with eggs");
