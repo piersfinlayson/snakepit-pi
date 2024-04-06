@@ -375,23 +375,23 @@ void Game::draw_char(const unsigned char *contents,
             screen_colour = BRIGHT_BLUE_COLOR;
             break;
         case 0x00aa00:
-            screen_colour = GREEN_COLOR;
+            screen_colour = BRIGHT_GREEN_COLOR;
             break;
         case 0x00aaaa:
-            screen_colour = CYAN_COLOR;
+            screen_colour = BRIGHT_CYAN_COLOR;
             break;
         case 0xaa0000:
             screen_colour = RED_COLOR;
             break;
         case 0xaa00aa:
-            screen_colour = MAGENTA_COLOR;
+            screen_colour = BRIGHT_MAGENTA_COLOR;
             break;
         case 0xaaaa00:
             screen_colour = BRIGHT_YELLOW_COLOR;
             break;
         case PLAYER_COLOUR:
         case 0xaaaaaa:
-            screen_colour = WHITE_COLOR;
+            screen_colour = BRIGHT_WHITE_COLOR;
             break;
         case EGG_COLOUR:
             screen_colour = RED_COLOR;
