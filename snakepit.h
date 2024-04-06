@@ -122,19 +122,25 @@ private:
 class Game
 {
 public:
-    Game(CDeviceNameService deviceNameService, CScreenDevice screen, CTimer timer, CLogger logger, CUSBKeyboardDevice * volatile keyboard);
+    Game(CDeviceNameService *deviceNameService,
+         CScreenDevice *screen,
+         CTimer *timer,
+         CLogger *logger,
+         CUSBHCIDevice *usbDevice);
     bool init();
     void go();
 
 private:
-    CDeviceNameService deviceNameService;
-    CScreenDevice screen;
-    CTimer timer;
-    CLogger logger;
+    CDeviceNameService *deviceNameService;
+    CScreenDevice *screen;
+    CTimer *timer;
+    CLogger *logger;
+    CUSBHCIDevice *usbDevice;
     CUSBKeyboardDevice * volatile keyboard;
     Player* player;
     Snake** snake;
-    void get_keyboard();
+    void get_keyboard(bool waitTilFound);
+    bool get_keyboard();
     void reset_game();
     Player* init_player();
     Snake** init_snakes();

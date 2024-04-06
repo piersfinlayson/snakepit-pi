@@ -35,9 +35,6 @@ public:
 	TShutdownMode Run (void);
 
 private:
-	void get_keyboard(void);
-
-private:
 	// do not change this order
 	CActLED			m_ActLED;
 	CKernelOptions		m_Options;
@@ -49,9 +46,6 @@ private:
 	CTimer			m_Timer;
 	CLogger			m_Logger;
 	CUSBHCIDevice		m_USBHCI;
-
-	CUSBKeyboardDevice * volatile keyboard = nullptr;
-
 
 	volatile TShutdownMode m_ShutdownMode;
 

@@ -20,7 +20,6 @@ CKernel::CKernel (void)
 	m_Timer (&m_Interrupt),
 	m_Logger (m_Options.GetLogLevel (), &m_Timer),
 	m_USBHCI (&m_Interrupt, &m_Timer, TRUE),		// TRUE: enable plug-and-play
-	keyboard (nullptr),
 	m_ShutdownMode (ShutdownNone)
 {
 	s_pThis = this;
@@ -78,15 +77,9 @@ boolean CKernel::Initialize (void)
 
 TShutdownMode CKernel::Run (void)
 {
-	bool ok;
-
 	m_Logger.Write (FromKernel, LogNotice, "Compile time: " __DATE__ " " __TIME__);
-	m_Logger.Write (FromKernel, LogNotice, "Finding keyboard");
-	get_keyboard();
-
-	Game game(m_DeviceNameService, m_Screen, m_Timer, m_Logger, keyboard);
-	ok = game.init();
-	if (ok)
+	Game game(&m_DeviceNameService, &m_Screen, &m_Timer, &m_Logger, &m_USBHCI);
+	if (game.init())
 	{
 		game.go();
 	}
@@ -100,23 +93,3 @@ TShutdownMode CKernel::Run (void)
 	return ShutdownHalt;
 }
 
-void CKernel::get_keyboard()
-{
-	m_Logger.Write (FromKernel, LogNotice, "Ensure a keyboard is plugged in - searching ...");
-    if (keyboard == nullptr)
-    {
-        boolean updated = m_USBHCI.UpdatePlugAndPlay();
-        if (updated)
-        {
-            keyboard = (CUSBKeyboardDevice *)m_DeviceNameService.GetDevice("ukbd1", FALSE);
-            if (keyboard != nullptr)
-            {
-                m_Logger.Write(FromKernel, LogNotice, "Keyboard found");
-                keyboard->RegisterKeyPressedHandler(KeyPressedHandler);
-                keyboard->RegisterKeyReleasedHandler(KeyReleasedHandler);
-                keyboard->RegisterRemovedHandler(KeyboardRemovedHandler);
-                keyboard->RegisterShutdownHandler(KeyboardShutdownHandler);
-            }
-        }
-    }
-}
