@@ -78,7 +78,7 @@ boolean CKernel::Initialize (void)
 TShutdownMode CKernel::Run (void)
 {
 	m_Logger.Write (FromKernel, LogNotice, "Compile time: " __DATE__ " " __TIME__);
-	Game game(&m_DeviceNameService, &m_Screen, &m_Timer, &m_Logger, &m_USBHCI);
+	Game game(&m_DeviceNameService, &m_Screen, &m_Timer, &m_USBHCI);
 	if (game.init())
 	{
 		game.go();

@@ -10,7 +10,6 @@ static Point cellsChanged[SNAKE_PIT_ROWS * SNAKE_PIT_COLS];
 static unsigned int numCellsChanged = 0;
 
 LOGMODULE("snakepit");
-static const char FromSnakepit[] = "snakepit";
 
 ScreenChar sc_egg(CHAR_EGG, EGG_COLOUR);
 ScreenChar sc_empty(CHAR_EMPTY, EMPTY_COLOUR);
@@ -63,8 +62,8 @@ void ScreenChar::set(ScreenChar ch, unsigned int overrideColour)
     colour = overrideColour;
 }
 
-Snake::Snake(Point head, Master master, unsigned int colour, CLogger *logger) 
-    : head(head), master(master), colour(colour), logger(logger)
+Snake::Snake(Point head, Master master, unsigned int colour) 
+    : head(head), master(master), colour(colour)
 {
     myHead = sc_snake_head;
     myHead.colour = colour;
@@ -73,7 +72,7 @@ Snake::Snake(Point head, Master master, unsigned int colour, CLogger *logger)
 
 void Snake::placeOnScreen()
 {
-    //logger->Write(FromSnakepit, LogDebug, "Placing snake head at %d/%d", head.x, head.y);
+    //LOGDBG("Placing snake head at %d/%d", head.x, head.y);
     switch (lastDirection)
     {
         case UP:
@@ -91,7 +90,7 @@ void Snake::placeOnScreen()
     }
     if (sc_snake_pit[head.y][head.x].colour == PLAYER_COLOUR)
     {
-        logger->Write(FromSnakepit, LogDebug, "Snake just ate player");
+        LOGDBG("Snake just ate player");
         playerEaten = true;
     }
     sc_snake_pit[head.y][head.x].set(myHead);
@@ -328,7 +327,7 @@ Snake::Direction Snake::generateMove()
     unsigned int randomNum = CBcmRandomNumberGenerator().GetNumber() % percent + 1;
     //if (master == MASTER)
     //{
-        //logger->Write(FromSnakepit, LogNotice, "Moving red snake result: %d, options up: %d, down: %d, left: %d, right: %d", randomNum, probability[0], probability[1], probability[2], probability[3]);
+        //LOGNOTE("Moving red snake result: %d, options up: %d, down: %d, left: %d, right: %d", randomNum, probability[0], probability[1], probability[2], probability[3]);
     //}
 
     Snake::Direction lowestProbDirection = lastDirection; // Initialize to a default value
@@ -344,8 +343,8 @@ Snake::Direction Snake::generateMove()
     return lowestProbDirection;
 }
 
-Player::Player(Point pos, CLogger *logger) 
-        : pos(pos), animation(Player::OPEN), logger(logger)
+Player::Player(Point pos) 
+        : pos(pos), animation(Player::OPEN)
 {}
 
 void Player::placeOnScreen()
@@ -359,7 +358,7 @@ void Player::placeOnScreen()
     {
         player_char = sc_player_mouth_closed;
     }
-    //logger->Write(FromSnakepit, LogDebug, "Placing player at %d/%d", pos.x, pos.y);
+    //LOGDBG("Placing player at %d/%d", pos.x, pos.y);
     sc_snake_pit[pos.y][pos.x].set(player_char);
     cellsChanged[numCellsChanged] = pos;
     numCellsChanged++;
@@ -379,7 +378,7 @@ void Player::takeTurn()
 
     if (last_key_pressed != 0)
     {
-        //logger->Write(FromSnakepit, LogDebug, "Player key pressed: %c", last_key_pressed);
+        //LOGDBG("Player key pressed: %c", last_key_pressed);
     }
     Point current = pos;
     Point next = pos;
@@ -427,9 +426,8 @@ void Player::takeTurn()
 Game::Game(CDeviceNameService *deviceNameService,
            CScreenDevice *screen,
            CTimer *timer,
-           CLogger *logger,
            CUSBHCIDevice *usbDevice)
-    : deviceNameService(deviceNameService), screen(screen), timer(timer), logger(logger), usbDevice(usbDevice), keyboard(nullptr), player(init_player()), snake(init_snakes())
+    : deviceNameService(deviceNameService), screen(screen), timer(timer), usbDevice(usbDevice), keyboard(nullptr), player(init_player()), snake(init_snakes())
 {
     LOGNOTE("Game created");
 }
@@ -500,7 +498,7 @@ void KeyboardShutdownHandler()
 
 void Game::go()
 {
-    logger->Write(FromSnakepit, LogDebug, "Game started");
+    LOGDBG("Game started");
 
 GAME_START:
 
@@ -534,7 +532,7 @@ GAME_START:
             }
             if (num_eggs <= 0)
             {
-                logger->Write(FromSnakepit, LogDebug, "All eggs eaten");
+                LOGDBG("All eggs eaten");
             }
             render_cells(cellsChanged, numCellsChanged);
             // Not deleting cellsChanged - may be memory leak
@@ -546,14 +544,14 @@ GAME_START:
                     // Wait for s key to be released
                     timer->MsDelay(50);
                 }
-                logger->Write(FromSnakepit, LogDebug, "Game restarted");
+                LOGDBG("Game restarted");
                 reset_game();
                 goto GAME_START;
             }
         }
     }
 
-    logger->Write(FromSnakepit, LogDebug, "Game::run() exited");
+    LOGDBG("Game::run() exited");
 }
 
 void Game::reset_game()
@@ -569,8 +567,8 @@ void Game::reset_game()
 Player* Game::init_player()
 {
     Point pos = {19, 17};
-    //logger->Write(FromSnakepit, LogDebug, "Initialising player at %d/%d", pos.x, pos.y);
-    Player* player = new Player(pos, logger);
+    //LOGDBG("Initialising player at %d/%d", pos.x, pos.y);
+    Player* player = new Player(pos);
     return player;
 }
 
@@ -578,15 +576,15 @@ Snake** Game::init_snakes()
 {
     Snake** snake = new Snake*[NUM_SNAKES];
 
-    //logger->Write(FromSnakepit, LogDebug, "Initialising snakes");
+    //LOGDBG("Initialising snakes");
 
     Point pos = Point{1, 2};
     for (int ii = 0; ii < NUM_SNAKES; ii++)
     {
-        //logger->Write(FromSnakepit, LogDebug, "Initialise snake %d at %d/%d", ii, pos.x, pos.y);
+        //LOGDBG("Initialise snake %d at %d/%d", ii, pos.x, pos.y);
         Snake::Master master = (ii == 0 ? Snake::MASTER : Snake::NOT_MASTER);
-        snake[ii] = new Snake(pos, master, SNAKE_COLOURS[ii], logger);
-        //logger->Write(FromSnakepit, LogDebug, "Snake %d: %p at %d/%d", ii, snake[ii], snake[ii]->head.x, snake[ii]->head.y);
+        snake[ii] = new Snake(pos, master, SNAKE_COLOURS[ii]);
+        //LOGDBG("Snake %d: %p at %d/%d", ii, snake[ii], snake[ii]->head.x, snake[ii]->head.y);
 
         pos.x += 6;
         if (pos.x > (SNAKE_PIT_COLS-3))
@@ -598,21 +596,21 @@ Snake** Game::init_snakes()
 
     for (int ii = 0; ii < NUM_SNAKES; ii++)
     {
-        //logger->Write(FromSnakepit, LogDebug, "Snake %d: %p at %d/%d", ii, snake[ii], snake[ii]->head.x,  snake[ii]->head.y);
+        //LOGDBG("Snake %d: %p at %d/%d", ii, snake[ii], snake[ii]->head.x,  snake[ii]->head.y);
     }
     return snake;
 }
 
 void Game::reset_player()
 {
-    logger->Write(FromSnakepit, LogDebug, "Resetting player");
+    LOGDBG("Resetting player");
     delete player;
     player = init_player();
 }
 
 void Game::reset_snakes()
 {
-    logger->Write(FromSnakepit, LogDebug, "Resetting snakes");
+    LOGDBG("Resetting snakes");
     for (int ii = 0; ii < NUM_SNAKES; ii++)
     {
         delete snake[ii];
@@ -622,27 +620,27 @@ void Game::reset_snakes()
 
 void Game::init_snake_pit()
 {
-    //logger->Write(FromSnakepit, LogDebug, "Initialising snake pit");
+    //LOGDBG("Initialising snake pit");
 
     // Fill the pit with eggs
-    //logger->Write(FromSnakepit, LogDebug, "Fill snake pit with eggs");
+    //LOGDBG("Fill snake pit with eggs");
     ScreenChar *cell = &sc_snake_pit[0][0];
     for (int ii = 0; ii < (SNAKE_PIT_ROWS * SNAKE_PIT_COLS); ii++)
     {
         cell->set(sc_egg);
         cell++;
     }
-    //logger->Write(FromSnakepit, LogDebug, "Snake pit filled with %d eggs", num_eggs);
+    //LOGDBG("Snake pit filled with %d eggs", num_eggs);
 
     // Clear 2x3 holes for each snake
-    //logger->Write(FromSnakepit, LogDebug, "Empty snake nests");
+    //LOGDBG("Empty snake nests");
     ScreenChar empty;
     for (int ii = 0; ii < NUM_SNAKES; ii++)
     {
-        //logger->Write(FromSnakepit, LogDebug, "Processing snake %d: %p", ii, snake[ii]);
+        //LOGDBG("Processing snake %d: %p", ii, snake[ii]);
         int x = snake[ii]->head.x;
         int y = snake[ii]->head.y;
-        //logger->Write(FromSnakepit, LogDebug, "Empty snake nest %d at %d/%d", ii, x, y);
+        //LOGDBG("Empty snake nest %d at %d/%d", ii, x, y);
         for (int xx = x; xx < x+2; xx++)
         {
             for (int yy = y; yy < y+3; yy++)
@@ -654,7 +652,7 @@ void Game::init_snake_pit()
             }
         }
     }
-    logger->Write(FromSnakepit, LogDebug, "Snake pit contains %d eggs", num_eggs);
+    LOGDBG("Snake pit contains %d eggs", num_eggs);
 }
 
 void Game::render_snake_pit()

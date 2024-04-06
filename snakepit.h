@@ -87,12 +87,9 @@ public:
     Point pos;
     Animation animation;
 
-    Player(Point pos, CLogger *logger);
+    Player(Point pos);
     void placeOnScreen();
     void takeTurn();
-
-private:
-    CLogger *logger;
 };
 
 class Snake
@@ -106,14 +103,13 @@ public:
     const unsigned int colour;
 
     Snake();
-    Snake(Point head, Master master, unsigned int colour, CLogger *logger);
+    Snake(Point head, Master master, unsigned int colour);
     void placeOnScreen();
     void takeTurn();
 
 private:
     Direction lastDirection;
     ScreenChar myHead;
-    CLogger *logger;
 
     void makeMove(Direction direction);
     Direction generateMove();
@@ -125,7 +121,6 @@ public:
     Game(CDeviceNameService *deviceNameService,
          CScreenDevice *screen,
          CTimer *timer,
-         CLogger *logger,
          CUSBHCIDevice *usbDevice);
     bool init();
     void go();
@@ -134,7 +129,6 @@ private:
     CDeviceNameService *deviceNameService;
     CScreenDevice *screen;
     CTimer *timer;
-    CLogger *logger;
     CUSBHCIDevice *usbDevice;
     CUSBKeyboardDevice * volatile keyboard;
     Player* player;
