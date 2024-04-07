@@ -1,4 +1,4 @@
-CIRCLEHOME=~/builds/circle
+CIRCLEHOME=../circle
 
 OBJS = main.o kernel.o other.o game.o
 
