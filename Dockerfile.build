@@ -1,0 +1,139 @@
+FROM ubuntu:22.04 as build
+
+# Add required packages
+RUN apt-get update && \
+    apt-get -y upgrade
+RUN apt-get install -y  build-essential \
+                        git \
+                        make \
+                        wget
+RUN mkdir /build
+
+# Get ARM toolchains
+RUN cd /build && \
+    wget "https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-aarch64-none-elf.tar.xz?rev=a05df3001fa34105838e6fba79ee1b23&hash=D63F63D13F01626D207019956E7122B5" -O arm-gnu-toolchain-13.2.rel1-x86_64-aarch64-none-elf.tar.xz && \
+    unxz arm-gnu-toolchain-13.2.rel1-x86_64-aarch64-none-elf.tar.xz && \
+    tar xf arm-gnu-toolchain-13.2.rel1-x86_64-aarch64-none-elf.tar && \
+    rm arm-gnu-toolchain-13.2.rel1-x86_64-aarch64-none-elf.tar && \
+    wget "https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz?rev=e434b9ea4afc4ed7998329566b764309&hash=CA590209F5774EE1C96E6450E14A3E26" -O arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz && \
+    unxz arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz && \
+    tar xf arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar && \
+    rm arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar 
+ENV PATH=$PATH:/build/arm-gnu-toolchain-13.2.Rel1-x86_64-aarch64-none-elf/bin:/build/arm-gnu-toolchain-13.2.Rel1-x86_64-arm-none-eabi/bin
+
+# Get circle and snakepit-pi
+ARG CIRCLE_REPO=https://github.com/piersfinlayson/circle
+ARG SNAKEPIT_REPO=https://github.com/piersfinlayson/snakepit-pi
+RUN cd /build && \
+    git clone $CIRCLE_REPO && \
+    git clone $SNAKEPIT_REPO && \
+    cd /build/circle && \
+    git checkout develop
+
+# Create directory for output
+RUN mkdir /output
+
+# Build for Pi 1/Zero
+ARG KERNEL_IMG=kernel.img
+ARG CONFIGURE_ARGS="-f -r 1 -p arm-none-eabi-"
+RUN cd /build/circle && \
+    ./configure $CONFIGURE_ARGS && \
+    ./makeall clean && \
+    ./makeall && \
+    cd /build/snakepit-pi && \
+    make clean && \
+    make && \
+    cp $KERNEL_IMG /output/$KERNEL_IMG
+
+# Build for Pi 2
+ARG KERNEL_IMG=kernel7.img
+ARG CONFIGURE_ARGS="-f -r 2 -p arm-none-eabi-"
+RUN cd /build/circle && \
+    ./configure $CONFIGURE_ARGS && \
+    ./makeall clean && \
+    ./makeall && \
+    cd /build/snakepit-pi && \
+    make clean && \
+    make && \
+    cp $KERNEL_IMG /output/$KERNEL_IMG
+
+# Build for Pi 3 32-bit
+ARG KERNEL_IMG=kernel8-32.img
+ARG CONFIGURE_ARGS="-f -r 3 -p arm-none-eabi-"
+RUN cd /build/circle && \
+    ./configure $CONFIGURE_ARGS && \
+    ./makeall clean && \
+    ./makeall && \
+    cd /build/snakepit-pi && \
+    make clean && \
+    make && \
+    cp $KERNEL_IMG /output/$KERNEL_IMG
+
+# Build for Pi 3 64-bit
+ARG KERNEL_IMG=kernel8.img
+ARG CONFIGURE_ARGS="-f -r 3 -p aarch64-none-elf-"
+RUN cd /build/circle && \
+    ./configure $CONFIGURE_ARGS && \
+    ./makeall clean && \
+    ./makeall && \
+    cd /build/snakepit-pi && \
+    make clean && \
+    make && \
+    cp $KERNEL_IMG /output/$KERNEL_IMG
+
+# Build for Pi 4 32-bit
+ARG KERNEL_IMG=kernel7l.img
+ARG CONFIGURE_ARGS="-f -r 4 -p arm-none-eabi-"
+RUN cd /build/circle && \
+    ./configure $CONFIGURE_ARGS && \
+    ./makeall clean && \
+    ./makeall && \
+    cd /build/snakepit-pi && \
+    make clean && \
+    make && \
+    cp $KERNEL_IMG /output/$KERNEL_IMG
+
+# Build for Pi 4 64-bit
+ARG KERNEL_IMG=kernel8-rpi4.img
+ARG CONFIGURE_ARGS="-f -r 4 -p aarch64-none-elf-"
+RUN cd /build/circle && \
+    ./configure $CONFIGURE_ARGS && \
+    ./makeall clean && \
+    ./makeall && \
+    cd /build/snakepit-pi && \
+    make clean && \
+    make && \
+    cp $KERNEL_IMG /output/$KERNEL_IMG
+
+# Build for Pi 5 64-bit
+ARG KERNEL_IMG=kernel_2712.img
+ARG CONFIGURE_ARGS="-f -r 5 -p aarch64-none-elf-"
+RUN cd /build/circle && \
+    ./configure $CONFIGURE_ARGS && \
+    ./makeall clean && \
+    ./makeall && \
+    cd /build/snakepit-pi && \
+    make clean && \
+    make && \
+    cp $KERNEL_IMG /output/$KERNEL_IMG
+
+# Collect the necessary firmware files
+RUN cd /build/circle/boot && \
+    make && \
+    cp *.txt /output/ && \
+    cp *.bin /output/ && \
+    cp *.elf /output/ && \
+    cp *.dat /output/ && \
+    cp *.dtb /output/ && \
+    cp LICENCE.broadcom /output/ && \
+    cp COPYING.linux /output/
+
+# Get the cmdline.txt
+RUN cd /build/snakepit-pi && \
+    cp cmdline.txt /output/
+
+# Now create the final image with just the output files
+FROM alpine
+COPY --from=build /output/ /output/
+VOLUME ['output']
+CMD tail -f /dev/null
