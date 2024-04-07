@@ -91,16 +91,6 @@ public:
 #define SCORE_COLOUR 0xaa0000
 
 #if 0
-{0x3c, 0x3e, 0x1f, 0x1f, 0x0f, 0x03, 0x00, 0x00}; // left to up, up to left
-{0x00, 0x00, 0x03, 0x0f, 0x1f, 0x1f, 0x3e, 0x3c}; // left to down, down to left
-{0x00, 0x00, 0x00, 0xc0, 0xf0, 0xf8, 0x7c, 0x3c}; // right to down, down to right
-{0x3c, 0x7c, 0xf8, 0xf8, 0xf0, 0xc0, 0x00, 0x00}; // right to up, up to right
-{0x00, 0xfe, 0x9e, 0xf8, 0xe0, 0x80, 0xfe, 0x00}; // mouth open head left
-{0x00, 0x62, 0x62, 0x72, 0x72, 0x5a, 0x5a, 0x7e}; // mouth open head up
-{0x00, 0x7f, 0x79, 0x1f, 0x07, 0x01, 0x7f, 0x00}; // mouth open head right
-{0x7e, 0x5a, 0x5a, 0x4e, 0x4e, 0x46, 0x46, 0x00}; // mouth open head down
-{0x3c, 0x7a, 0xf7, 0xef, 0xe7, 0xfe, 0x7e, 0x3c}; // double back up
-
 const uint64_t IMAGES[] = {
   0x0000030f1f1f3e3c, // left to up, up to left
   0x3c3e1f1f0f030000, // left to down, down to left
@@ -110,11 +100,11 @@ const uint64_t IMAGES[] = {
   0x7e5a5a7272626200, // mouth open head up
   0x007f01071f797f00, // mouth open head right 
   0x0046464e4e5a5a7e, // mouth open head down
-  0x3c7effe7eff77a3c, // double back up
-  
+  0x3c7effe7eff77a3c, // double back up  
   0x3c7efdebe7ff7e3c, // double back left
   0x3c5eeff7e7ff7e3c, // double back down
   0x3c7effe7d7bf7e3c, // double back right
+
   0x3c3c3c1818181800, // tail up body down
   0x0000e0fefee00000, // tail left body right
   0x00181818183c3c3c, // tail down body up
@@ -142,6 +132,24 @@ const unsigned char CHAR_SNAKE_HEAD_UP[CHAR_SIZE] = {0x00, 0x58, 0x58, 0x5c, 0x5
 const unsigned char CHAR_SNAKE_HEAD_RIGHT[CHAR_SIZE] = {0x00, 0xf0, 0x98, 0xfe, 0xde, 0xc0, 0xfe, 0x00};
 const unsigned char CHAR_SNAKE_HEAD_LEFT[CHAR_SIZE] = {0x00, 0x0f, 0x19, 0x7f, 0xfb, 0x03, 0x7f, 0x00};
 const unsigned char CHAR_SNAKE_BODY[CHAR_SIZE] = {0x00, 0x00, 0x3c, 0x3c, 0x3c, 0x3c, 0x00, 0x00};
+const unsigned char CHAR_SNAKE_BODY_L_U[CHAR_SIZE] = {0x3c, 0x3e, 0x1f, 0x1f, 0x0f, 0x03, 0x00, 0x00}; // left to up, up to left
+const unsigned char CHAR_SNAKE_BODY_L_D[CHAR_SIZE] = {0x00, 0x00, 0x03, 0x0f, 0x1f, 0x1f, 0x3e, 0x3c}; // left to down, down to left
+const unsigned char CHAR_SNAKE_BODY_R_D[CHAR_SIZE] = {0x00, 0x00, 0x00, 0xc0, 0xf0, 0xf8, 0x7c, 0x3c}; // right to down, down to right
+const unsigned char CHAR_SNAKE_BODY_R_U[CHAR_SIZE] = {0x3c, 0x7c, 0xf8, 0xf8, 0xf0, 0xc0, 0x00, 0x00}; // right to up, up to right
+const unsigned char CHAR_SNAKE_HEAD_OPEN_LEFT[CHAR_SIZE] = {0x00, 0xfe, 0x9e, 0xf8, 0xe0, 0x80, 0xfe, 0x00}; // mouth open head left
+const unsigned char CHAR_SNAKE_HEAD_OPEN_UP[CHAR_SIZE] = {0x00, 0x62, 0x62, 0x72, 0x72, 0x5a, 0x5a, 0x7e}; // mouth open head up
+const unsigned char CHAR_SNAKE_HEAD_OPEN_RIGHT[CHAR_SIZE] = {0x00, 0x7f, 0x79, 0x1f, 0x07, 0x01, 0x7f, 0x00}; // mouth open head right
+const unsigned char CHAR_SNAKE_HEAD_OPEN_DOWN[CHAR_SIZE] = {0x7e, 0x5a, 0x5a, 0x4e, 0x4e, 0x46, 0x46, 0x00}; // mouth open head down
+const unsigned char CHAR_SNAKE_BODY_DBL_UP[CHAR_SIZE] = {0x3c, 0x7a, 0xf7, 0xef, 0xe7, 0xfe, 0x7e, 0x3c}; // double back up
+const unsigned char CHAR_SNAKE_BODY_DBL_LEFT[CHAR_SIZE] = {0x3c, 0x7e, 0xff, 0xe7, 0xeb, 0xfd, 0x7e, 0x3c}; // double back left
+const unsigned char CHAR_SNAKE_BODY_DBL_DOWN[CHAR_SIZE] = {0x3c, 0x7e, 0xff, 0xe7, 0xf7, 0xef, 0x5e, 0x3c}; // double back down
+const unsigned char CHAR_SNAKE_BODY_DBL_RIGHT[CHAR_SIZE] = {0x3c, 0x7e, 0xbf, 0xd7, 0xe7, 0xdf, 0x7e, 0x3c}; // double back right
+const unsigned char CHAR_SNAKE_TAIL_UP_BODY_DOWN[CHAR_SIZE] = {0x00, 0x18, 0x18, 0x18, 0x18, 0x3c, 0x3c, 0x3c}; // tail up body down
+const unsigned char CHAR_SNAKE_TAIL_LEFT_BODY_RIGHT[CHAR_SIZE] = {0x00, 0x00, 0xe0, 0xfe, 0xfe, 0xe0, 0x00, 0x00}; // tail left body right
+const unsigned char CHAR_SNAKE_TAIL_DOWN_BODY_UP[CHAR_SIZE] = {0x3c, 0x3c, 0x3c, 0x18, 0x18, 0x18, 0x18, 0x00}; // tail down body up
+const unsigned char CHAR_SNAKE_TAIL_RIGHT_BODY_LEFT[CHAR_SIZE] = {0x00, 0x00, 0x07, 0x7f, 0x7f, 0x07, 0x00, 0x00}; // tail right body left
+const unsigned char CHAR_SNAKE_BODY_HORIZONTAL[CHAR_SIZE] = {0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00}; // body horizontal
+const unsigned char CHAR_SNAKE_BODY_VERTICAL[CHAR_SIZE] = {0x3c, 0x3c, 0x3c, 0x3c, 0x3c, 0x3c, 0x3c, 0x3c}; // body vertical
 const unsigned char CHAR_PLAYER_MOUTH_OPEN[CHAR_SIZE] = {0x7e, 0x99, 0xff, 0xc3, 0x81, 0xc3, 0xe7, 0x7e};
 const unsigned char CHAR_PLAYER_MOUTH_CLOSED[CHAR_SIZE] = {0x7e, 0x99, 0x99, 0xff, 0xbd, 0xc3, 0xff, 0x7e};
 const unsigned char CHAR_EMPTY[CHAR_SIZE] = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -163,6 +171,24 @@ extern const unsigned char CHAR_SNAKE_HEAD_DOWN[CHAR_SIZE];
 extern const unsigned char CHAR_SNAKE_HEAD_UP[CHAR_SIZE];
 extern const unsigned char CHAR_SNAKE_HEAD_LEFT[CHAR_SIZE];
 extern const unsigned char CHAR_SNAKE_HEAD_RIGHT[CHAR_SIZE];
+extern const unsigned char CHAR_SNAKE_BODY_L_U[CHAR_SIZE];
+extern const unsigned char CHAR_SNAKE_BODY_L_D[CHAR_SIZE];
+extern const unsigned char CHAR_SNAKE_BODY_R_D[CHAR_SIZE];
+extern const unsigned char CHAR_SNAKE_BODY_R_U[CHAR_SIZE];
+extern const unsigned char CHAR_SNAKE_HEAD_OPEN_LEFT[CHAR_SIZE];
+extern const unsigned char CHAR_SNAKE_HEAD_OPEN_UP[CHAR_SIZE];
+extern const unsigned char CHAR_SNAKE_HEAD_OPEN_RIGHT[CHAR_SIZE];
+extern const unsigned char CHAR_SNAKE_HEAD_OPEN_DOWN[CHAR_SIZE];
+extern const unsigned char CHAR_SNAKE_BODY_DBL_UP[CHAR_SIZE];
+extern const unsigned char CHAR_SNAKE_BODY_DBL_LEFT[CHAR_SIZE];
+extern const unsigned char CHAR_SNAKE_BODY_DBL_DOWN[CHAR_SIZE];
+extern const unsigned char CHAR_SNAKE_BODY_DBL_RIGHT[CHAR_SIZE];
+extern const unsigned char CHAR_SNAKE_TAIL_UP_BODY_DOWN[CHAR_SIZE];
+extern const unsigned char CHAR_SNAKE_TAIL_LEFT_BODY_RIGHT[CHAR_SIZE];
+extern const unsigned char CHAR_SNAKE_TAIL_DOWN_BODY_UP[CHAR_SIZE];
+extern const unsigned char CHAR_SNAKE_TAIL_RIGHT_BODY_LEFT[CHAR_SIZE];
+extern const unsigned char CHAR_SNAKE_BODY_HORIZONTAL[CHAR_SIZE];
+extern const unsigned char CHAR_SNAKE_BODY_VERTICAL[CHAR_SIZE];
 extern const unsigned char CHAR_PLAYER_MOUTH_OPEN[CHAR_SIZE];
 extern const unsigned char CHAR_PLAYER_MOUTH_CLOSED[CHAR_SIZE];
 extern const unsigned char CHAR_EMPTY[CHAR_SIZE];
