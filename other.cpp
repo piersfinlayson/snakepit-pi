@@ -99,11 +99,12 @@ void Snake::updateBody()
 {
     assert(bodyLen > 0);
     int oldBodyHead = bodyHead;
-    int bodyHeadMinus2 = bodyHead - 1;
+    int bodyHeadMinus2;
 
     // To go back 2 from the nextHead, we need a body length of at least 2 already
-    if (bodyLen > 1)
+    if (bodyLen > 2)
     {
+        bodyHeadMinus2 = bodyHead - 1;
         if (bodyHeadMinus2 < 0)
         {
             bodyHeadMinus2 = SNAKE_BODY_LEN-1;
@@ -143,21 +144,28 @@ void Snake::updateBody()
 
     // Figure out if oldBodyhead is left, right, up or down of nextHead
     Direction oldHead;
-    if (bodyPart[oldBodyHead].pos.x < bodyPart[bodyHead].pos.x)
+    if (bodyPart[oldBodyHead].pos.x < nextHead.x)
     {
         oldHead = LEFT;
     }
-    else if (bodyPart[oldBodyHead].pos.y < bodyPart[bodyHead].pos.y)
+    else if (bodyPart[oldBodyHead].pos.y < nextHead.y)
     {
         oldHead = UP;
     }
-    else if (bodyPart[oldBodyHead].pos.y > bodyPart[bodyHead].pos.y)
+    else if (bodyPart[oldBodyHead].pos.y > nextHead.y)
     {
         oldHead = DOWN;
     }
-    else if (bodyPart[oldBodyHead].pos.x > bodyPart[bodyHead].pos.x)
+    else if (bodyPart[oldBodyHead].pos.x > nextHead.x)
     {
         oldHead = RIGHT;
+    }
+    else if (bodyLen == 1)
+    {
+        // We're only 1 long, so we don't have a body part yet
+        // In this case oldBodyHead and nextHead point to the same thing
+        // We start off by going down (so oldHead would be UP)
+        oldHead = UP;
     }
     else
     {
@@ -247,10 +255,10 @@ void Snake::updateBody()
                 switch (headMinus2)
                 {
                     case LEFT:
-                        newBodyPart = CHAR_SNAKE_BODY_R_U;
+                        newBodyPart = CHAR_SNAKE_BODY_L_D;
                         break;
                     case RIGHT:
-                        newBodyPart = CHAR_SNAKE_BODY_L_U;
+                        newBodyPart = CHAR_SNAKE_BODY_R_D;
                         break;
                     case UP:
                         break;
@@ -270,10 +278,10 @@ void Snake::updateBody()
                 switch (headMinus2)
                 {
                     case LEFT:
-                        newBodyPart = CHAR_SNAKE_BODY_R_D;
+                        newBodyPart = CHAR_SNAKE_BODY_L_U;
                         break;
                     case RIGHT:
-                        newBodyPart = CHAR_SNAKE_BODY_L_D;
+                        newBodyPart = CHAR_SNAKE_BODY_R_U;
                         break;
                     case UP:
                         newBodyPart = CHAR_SNAKE_BODY_DBL_UP;
@@ -391,6 +399,13 @@ void Snake::generateNextDirection()
     // However, they can't move over another snake, and non-master snakes can't move over eggs
     // Snakes will only go back the way they came if they have no other choice
     
+    if (bodyLen <= 2)
+    {
+        // Snakes always go down the first time
+        nextDirection = DOWN;
+        return;
+    }
+
     // Set the preferred direction based on the last direction
     Direction preferredDirection = lastDirection;
     Direction lastResortDirection;
