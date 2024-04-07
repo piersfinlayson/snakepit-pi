@@ -90,30 +90,6 @@ public:
 #define EMPTY_COLOUR 0x000000
 #define SCORE_COLOUR 0xaa0000
 
-#if 0
-const uint64_t IMAGES[] = {
-  0x0000030f1f1f3e3c, // left to up, up to left
-  0x3c3e1f1f0f030000, // left to down, down to left
-  0x3c7cf8f8f0c00000, // right to down, down to right
-  0x0000c0f0f8f87c3c, // right to up, up to right
-  0x00fe80e0f89efe00, // mouth open head left
-  0x7e5a5a7272626200, // mouth open head up
-  0x007f01071f797f00, // mouth open head right 
-  0x0046464e4e5a5a7e, // mouth open head down
-  0x3c7effe7eff77a3c, // double back up  
-  0x3c7efdebe7ff7e3c, // double back left
-  0x3c5eeff7e7ff7e3c, // double back down
-  0x3c7effe7d7bf7e3c, // double back right
-  0x3c3c3c1818181800, // tail up body down
-  0x0000e0fefee00000, // tail left body right
-  0x00181818183c3c3c, // tail down body up
-  0x0000077f7f070000, // tail right body left
-  0x0000ffffffff0000, // body horizontal
-  0x3c3c3c3c3c3c3c3c  // body vertical
-};
-const int IMAGES_LEN = sizeof(IMAGES)/8;
-#endif 
-
 #ifdef GAME_CPP
 const unsigned int SNAKE_COLOURS[NUM_SNAKES] =
 {
@@ -182,10 +158,10 @@ const unsigned char CHAR_SNAKE_BODY_DBL_UP[CHAR_SIZE] = {0x3c, 0x7a, 0xf7, 0xef,
 const unsigned char CHAR_SNAKE_BODY_DBL_RIGHT[CHAR_SIZE] = {0x3c, 0x7e, 0xff, 0xe7, 0xeb, 0xfd, 0x7e, 0x3c}; // double back right
 const unsigned char CHAR_SNAKE_BODY_DBL_DOWN[CHAR_SIZE] = {0x3c, 0x7e, 0xff, 0xe7, 0xf7, 0xef, 0x5e, 0x3c}; // double back down
 const unsigned char CHAR_SNAKE_BODY_DBL_LEFT[CHAR_SIZE] = {0x3c, 0x7e, 0xbf, 0xd7, 0xe7, 0xff, 0x7e, 0x3c}; // double back left
-const unsigned char CHAR_SNAKE_TAIL_UP_BODY_DOWN[CHAR_SIZE] = {0x00, 0x18, 0x18, 0x18, 0x18, 0x3c, 0x3c, 0x3c}; // tail up body down
-const unsigned char CHAR_SNAKE_TAIL_LEFT_BODY_RIGHT[CHAR_SIZE] = {0x00, 0x00, 0xe0, 0xfe, 0xfe, 0xe0, 0x00, 0x00}; // tail left body right
-const unsigned char CHAR_SNAKE_TAIL_DOWN_BODY_UP[CHAR_SIZE] = {0x3c, 0x3c, 0x3c, 0x18, 0x18, 0x18, 0x18, 0x00}; // tail down body up
-const unsigned char CHAR_SNAKE_TAIL_RIGHT_BODY_LEFT[CHAR_SIZE] = {0x00, 0x00, 0x07, 0x7f, 0x7f, 0x07, 0x00, 0x00}; // tail right body left
+const unsigned char CHAR_SNAKE_TAIL_DOWN_BODY_UP[CHAR_SIZE] = {0x00, 0x18, 0x18, 0x18, 0x18, 0x3c, 0x3c, 0x3c}; // tail up body down
+const unsigned char CHAR_SNAKE_TAIL_RIGHT_BODY_LEFT[CHAR_SIZE] = {0x00, 0x00, 0xe0, 0xfe, 0xfe, 0xe0, 0x00, 0x00}; // tail left body right
+const unsigned char CHAR_SNAKE_TAIL_UP_BODY_DOWN[CHAR_SIZE] = {0x3c, 0x3c, 0x3c, 0x18, 0x18, 0x18, 0x18, 0x00}; // tail down body up
+const unsigned char CHAR_SNAKE_TAIL_LEFT_BODY_RIGHT[CHAR_SIZE] = {0x00, 0x00, 0x07, 0x7f, 0x7f, 0x07, 0x00, 0x00}; // tail right body left
 const unsigned char CHAR_SNAKE_BODY_HORIZONTAL[CHAR_SIZE] = {0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00}; // body horizontal
 const unsigned char CHAR_SNAKE_BODY_VERTICAL[CHAR_SIZE] = {0x3c, 0x3c, 0x3c, 0x3c, 0x3c, 0x3c, 0x3c, 0x3c}; // body vertical
 extern const unsigned char CHAR_PLAYER_MOUTH_OPEN[CHAR_SIZE];

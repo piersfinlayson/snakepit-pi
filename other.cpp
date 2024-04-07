@@ -142,6 +142,68 @@ void Snake::updateBody()
         }
     }
 
+    if (bodyLen >= (SNAKE_BODY_LEN-1))
+    {
+        // We have to change the new tail to be the correct shape
+        // To do so we need to know the shape of the next piece of the body
+        int newTailIndex = bodyHead + 1;
+        if (newTailIndex >= SNAKE_BODY_LEN)
+        {
+            newTailIndex = 0;
+        }
+        int newNextIndex = newTailIndex + 1;
+        if (newNextIndex >= SNAKE_BODY_LEN)
+        {
+            newNextIndex = 0;
+        }
+
+        // Don't draw tail unless there's nothing on top
+        Point *tailPos = &(bodyPart[newTailIndex].pos);
+        bool clear = true;
+        for (int ii = 0; ii < SNAKE_BODY_LEN; ii++)
+        {
+            if ((*tailPos == bodyPart[ii].pos) && (ii != newTailIndex))
+            {
+                clear = false;
+                break;
+            }
+        }
+        if (clear)
+        {
+            const unsigned char *tailBodyPart;
+            if (bodyPart[newTailIndex].pos.x < bodyPart[newNextIndex].pos.x)
+            {
+                // Tail is left of body
+                tailBodyPart = CHAR_SNAKE_TAIL_LEFT_BODY_RIGHT;
+            }
+            else if (bodyPart[newTailIndex].pos.x > bodyPart[newNextIndex].pos.x)
+            {
+                // Tail is right of body
+                tailBodyPart = CHAR_SNAKE_TAIL_RIGHT_BODY_LEFT;
+            }
+            else if (bodyPart[newTailIndex].pos.y < bodyPart[newNextIndex].pos.y)
+            {
+                // Tail is below body
+                tailBodyPart = CHAR_SNAKE_TAIL_DOWN_BODY_UP;
+            }
+            else if (bodyPart[newTailIndex].pos.y > bodyPart[newNextIndex].pos.y)
+            {
+                // Tail is above body
+                tailBodyPart = CHAR_SNAKE_TAIL_UP_BODY_DOWN;
+            }
+            else
+            {
+                assert(false);
+                tailBodyPart = CHAR_SNAKE_TAIL_DOWN_BODY_UP;
+            }
+            ScreenChar scNewTailPart = {tailBodyPart, colour};
+            bodyPart[newTailIndex].bodyChar.set(scNewTailPart);
+            changeCell(bodyPart[newTailIndex].pos, bodyPart[newTailIndex].bodyChar);
+            changeCell(*tailPos, scNewTailPart);
+        }
+
+    }
+
     // Figure out if oldBodyhead is left, right, up or down of nextHead
     Direction oldHead;
     if (bodyPart[oldBodyHead].pos.x < nextHead.x)
@@ -299,7 +361,7 @@ void Snake::updateBody()
             break;
     }
 
-    // Change the old head to be the corret body part105
+    // Change the old head to be the corret body part
     ScreenChar scNewBodyPart = {newBodyPart, colour};
     bodyPart[oldBodyHead].bodyChar.set(scNewBodyPart);
     changeCell(bodyPart[oldBodyHead].pos, bodyPart[oldBodyHead].bodyChar);
