@@ -388,14 +388,19 @@ void Snake::generateNextDirection()
     int percentPer;
     if (preferredIndex >= 0)
     {
+        assert(preferredIndex < 4);
         // We have a preferred direction, overweight that
         probability[preferredIndex] = 80;
         percent = probability[preferredIndex];
         validDirections--;
+        percentPer = (100-probability[preferredIndex])/validDirections;
+    }
+    else
+    {
+        percentPer = 100/validDirections;
     }
 
     // Set probabilities for non-preferred directions, with equal weighting
-    percentPer = (100-probability[preferredIndex])/validDirections;
     for (int ii = 0; ii < 4; ii++)
     {
         if (allowed[ii] && (ii != preferredIndex))
@@ -409,11 +414,8 @@ void Snake::generateNextDirection()
     assert(validDirections == 0);
 
     // Generate a random number between 0 and 99 and turn into 1-100.
-    unsigned int randomNum = CBcmRandomNumberGenerator().GetNumber() % percent + 1;
-    //if (master == MASTER)
-    //{
-        //LOGNOTE("Moving red snake result: %d, options up: %d, down: %d, left: %d, right: %d", randomNum, probability[0], probability[1], probability[2], probability[3]);
-    //}
+    unsigned int randomNum = CBcmRandomNumberGenerator().GetNumber() % percent + 1; 
+    LOGDBG("Moving snake result: %d, options up: %d, down: %d, left: %d, right: %d", randomNum, probability[0], probability[1], probability[2], probability[3]);
 
     Snake::Direction lowestProbDirection = lastDirection; // Initialize to a default value
     unsigned int lowestProb = 101; // Initialize to a value greater than any probability
