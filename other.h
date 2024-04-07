@@ -90,6 +90,30 @@ public:
 #define EMPTY_COLOUR 0x000000
 #define SCORE_COLOUR 0xaa0000
 
+#if 0
+const uint64_t IMAGES[] = {
+  0x0000030f1f1f3e3c,
+  0x3c3e1f1f0f030000,
+  0x3c7cf8f8f0c00000,
+  0x0000c0f0f8f87c3c,
+  0x00fe80e0f89efe00,
+  0x7e5a5a7272626200,
+  0x007f01071f797f00,
+  0x0046464e4e5a5a7e,
+  0x3c7effe7eff77a3c,
+  0x3c7efdebe7ff7e3c,
+  0x3c5eeff7e7ff7e3c,
+  0x3c7effe7d7bf7e3c,
+  0x3c3c3c1818181800,
+  0x0000e0fefee00000,
+  0x00181818183c3c3c,
+  0x0000077f7f070000,
+  0x0000ffffffff0000,
+  0x3c3c3c3c3c3c3c3c
+};
+const int IMAGES_LEN = sizeof(IMAGES)/8;
+#endif 
+
 #ifdef GAME_CPP
 const unsigned int SNAKE_COLOURS[NUM_SNAKES] =
 {
