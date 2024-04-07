@@ -74,11 +74,10 @@ void ScreenChar::set(ScreenChar ch, unsigned int overrideColour, bool reverse)
 }
 
 Snake::Snake(Point head, Master master, unsigned int colour) 
-    : head(head), master(master), colour(colour), animation(OPEN), bodyLen(0)
+    : head(head), master(master), colour(colour), animation(OPEN), bodyLen(0), bodyHead(0), nextHead(Point{-1, -1}), lastDirection(Snake::DOWN), nextDirection(Snake::DOWN)
 {
     myHead = sc_snake_head_down;
     myHead.colour = colour;
-    lastDirection = Snake::DOWN; // Snakes always start in top left of their hole, as if they were going down
     bodyPart[0].bodyChar.set(myHead, colour);
     bodyPart[0].pos = head;
     bodyHead = 0;
@@ -88,6 +87,9 @@ Snake::Snake(Point head, Master master, unsigned int colour)
 void Snake::init(Point pos)
 {
     head = pos;
+    nextHead = pos;
+    lastDirection = DOWN;
+    nextDirection = DOWN;
     bodyHead = 0;
     bodyLen = 1;
     bodyPart[bodyHead].pos = pos;
@@ -124,24 +126,17 @@ void Snake::updateBody()
         }
     }
 
+    // TODO
+    // Use the nextHead and nextDirection to figure out how to modify the old head
+
     // Change the old head to be a body part
     bodyPart[oldBodyHead].bodyChar.set(sc_snake_body, colour);
     changeCell(bodyPart[oldBodyHead].pos, bodyPart[oldBodyHead].bodyChar);
 
-    // Set the new head position
-    bodyPart[bodyHead].bodyChar.set(myHead, colour);
-    bodyPart[bodyHead].pos = head;
-    if (bodyLen < SNAKE_BODY_LEN)
-    {
-        bodyLen++;
-    }
-}
-
-void Snake::placeOnScreen()
-{
-    LOGDBG("Placing snake head at %d/%d", head.x, head.y);
+    // Figure out next head
+    LOGDBG("Placing snake head at %d/%d", nextHead.x, nextHead.y);
     ScreenChar *ch = &sc_snake_head_down;
-    switch (lastDirection)
+    switch (nextDirection)
     {
         case UP:
             ch = &sc_snake_head_up;
@@ -155,58 +150,78 @@ void Snake::placeOnScreen()
         case RIGHT:
             ch = &sc_snake_head_right;
             break;
+        default:
+            assert(false);
+            break;
     }
     myHead.set(*ch, colour);
-    updateBody();
 
-    if (sc_snake_pit[head.y][head.x].colour == PLAYER_COLOUR)
+    // Set the new head position
+    bodyPart[bodyHead].bodyChar.set(myHead, colour);
+    bodyPart[bodyHead].pos = nextHead;
+    if (bodyLen < SNAKE_BODY_LEN)
     {
-        LOGNOTE("Game over - player eaten");
-        playerEaten = true;
+        bodyLen++;
     }
+
+    // Now we've made the move, update our variables
+    lastDirection = nextDirection;
+    head = nextHead;
+
     changeCell(head, myHead);
+}
+
+void Snake::placeOnScreen()
+{
+    makeMove();
 }
 
 void Snake::takeTurn()
 {
-    makeMove(generateMove());
+    generateNextDirection();
+    generateNextPosition();
+    makeMove();
 }
 
-void Snake::makeMove(Direction direction)
+void Snake::makeMove()
 {
-    //Point current = head;
-    Point next = head;
+    assert(nextHead.x >= 0 && nextHead.y >= 0);
 
-    // Move the head
-    switch (direction)
+    if (sc_snake_pit[nextHead.y][nextHead.x].colour == PLAYER_COLOUR)
     {
-        case UP:
-            next.y--;
-            break;
-        case DOWN:
-            next.y++;
-            break;
-        case LEFT:
-            next.x--;
-            break;
-        case RIGHT:
-            next.x++;
-            break;
+        LOGNOTE("Game over - player eaten");
+        playerEaten = true;
     }
 
-    // Clear the current position - no longer required, as we update the body
-    // changeCell(current, sc_empty);
-
-    // Save the direction
-    lastDirection = direction;
-
-    // Place the head on the screen
-    head = next;
-    placeOnScreen();
-
+    updateBody();
 }
 
-Snake::Direction Snake::generateMove()
+void Snake::generateNextPosition()
+{
+    // Set the next position based on the direction
+    nextHead = head;
+    switch (nextDirection)
+    {
+        case UP:
+            nextHead.y--;
+            break;
+        case DOWN:
+            nextHead.y++;
+            break;
+        case LEFT:
+            nextHead.x--;
+            break;
+        case RIGHT:
+            nextHead.x++;
+            break;
+        default:
+            assert(false);
+            break;
+    }
+}
+
+
+void Snake::generateNextDirection()
 {
     // Snakes prefer to move in the direction they were last going
     // However, they will, with a certain probability, choose a different random direction
@@ -349,7 +364,8 @@ Snake::Direction Snake::generateMove()
     // If we can't move anywhere, go back the way we came
     if (!validDirections)
     {
-        return lastResortDirection;
+        nextDirection = lastResortDirection;
+        return;
     }
 
     // If we can only go one way, go that way
@@ -359,10 +375,12 @@ Snake::Direction Snake::generateMove()
         {
             if (allowed[ii])
             {
-                return direction[ii];
+                nextDirection = direction[ii];
+                return;
             }
         }
-        return lastResortDirection; // Belt and braces
+        nextDirection = lastResortDirection; // Belt and braces
+        return;
     }
 
     // More than one valid direction, weight them
@@ -407,7 +425,8 @@ Snake::Direction Snake::generateMove()
             lowestProbDirection = direction[ii];
         }
     }
-    return lowestProbDirection;
+    nextDirection = lowestProbDirection;
+    return;
 }
 
 Player::Player(Point pos) 

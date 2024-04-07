@@ -91,25 +91,36 @@ public:
 #define SCORE_COLOUR 0xaa0000
 
 #if 0
+{0x3c, 0x3e, 0x1f, 0x1f, 0x0f, 0x03, 0x00, 0x00}; // left to up, up to left
+{0x00, 0x00, 0x03, 0x0f, 0x1f, 0x1f, 0x3e, 0x3c}; // left to down, down to left
+{0x00, 0x00, 0x00, 0xc0, 0xf0, 0xf8, 0x7c, 0x3c}; // right to down, down to right
+{0x3c, 0x7c, 0xf8, 0xf8, 0xf0, 0xc0, 0x00, 0x00}; // right to up, up to right
+{0x00, 0xfe, 0x9e, 0xf8, 0xe0, 0x80, 0xfe, 0x00}; // mouth open head left
+{0x00, 0x62, 0x62, 0x72, 0x72, 0x5a, 0x5a, 0x7e}; // mouth open head up
+{0x00, 0x7f, 0x79, 0x1f, 0x07, 0x01, 0x7f, 0x00}; // mouth open head right
+{0x7e, 0x5a, 0x5a, 0x4e, 0x4e, 0x46, 0x46, 0x00}; // mouth open head down
+{0x3c, 0x7a, 0xf7, 0xef, 0xe7, 0xfe, 0x7e, 0x3c}; // double back up
+
 const uint64_t IMAGES[] = {
-  0x0000030f1f1f3e3c,
-  0x3c3e1f1f0f030000,
-  0x3c7cf8f8f0c00000,
-  0x0000c0f0f8f87c3c,
-  0x00fe80e0f89efe00,
-  0x7e5a5a7272626200,
-  0x007f01071f797f00,
-  0x0046464e4e5a5a7e,
-  0x3c7effe7eff77a3c,
-  0x3c7efdebe7ff7e3c,
-  0x3c5eeff7e7ff7e3c,
-  0x3c7effe7d7bf7e3c,
-  0x3c3c3c1818181800,
-  0x0000e0fefee00000,
-  0x00181818183c3c3c,
-  0x0000077f7f070000,
-  0x0000ffffffff0000,
-  0x3c3c3c3c3c3c3c3c
+  0x0000030f1f1f3e3c, // left to up, up to left
+  0x3c3e1f1f0f030000, // left to down, down to left
+  0x3c7cf8f8f0c00000, // right to down, down to right
+  0x0000c0f0f8f87c3c, // right to up, up to right
+  0x00fe80e0f89efe00, // mouth open head left
+  0x7e5a5a7272626200, // mouth open head up
+  0x007f01071f797f00, // mouth open head right 
+  0x0046464e4e5a5a7e, // mouth open head down
+  0x3c7effe7eff77a3c, // double back up
+  
+  0x3c7efdebe7ff7e3c, // double back left
+  0x3c5eeff7e7ff7e3c, // double back down
+  0x3c7effe7d7bf7e3c, // double back right
+  0x3c3c3c1818181800, // tail up body down
+  0x0000e0fefee00000, // tail left body right
+  0x00181818183c3c3c, // tail down body up
+  0x0000077f7f070000, // tail right body left
+  0x0000ffffffff0000, // body horizontal
+  0x3c3c3c3c3c3c3c3c  // body vertical
 };
 const int IMAGES_LEN = sizeof(IMAGES)/8;
 #endif 
@@ -241,19 +252,22 @@ public:
     Snake();
     Snake(Point head, Master master, unsigned int colour);
     void init(Point pos);
-    void placeOnScreen();
     void takeTurn();
+    void placeOnScreen();
 
 private:
-    Direction lastDirection;
-    ScreenChar myHead;
-    BodyPart bodyPart[SNAKE_BODY_LEN];
     unsigned int bodyLen;
     int bodyHead;
+    Point nextHead;
+    Direction lastDirection;
+    Direction nextDirection;
+    ScreenChar myHead;
+    BodyPart bodyPart[SNAKE_BODY_LEN];
 
     void updateBody();
-    void makeMove(Direction direction);
-    Direction generateMove();
+    void makeMove();
+    void generateNextPosition();
+    void generateNextDirection();
 };
 
 #endif // OTHER_H
