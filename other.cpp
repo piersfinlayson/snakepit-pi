@@ -184,6 +184,7 @@ void Snake::updateBody()
         {
             headMinus2 = RIGHT;
         }
+        else
         {
             assert(false);
         }
