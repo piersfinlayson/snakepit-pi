@@ -2,6 +2,16 @@
 
 A port of Snake Pit by Mike Singleton to the Raspberry Pi.  Written to run bare metal on the Pi in C++ using [Circle](https://github.com/rsta2/circle).
 
+## Quick-start
+
+To automatically create an SD card with the necessary files you need to:
+* Insert an SD card (e.g. `/dev/sdb`)
+* Run `./create_sd.sh /dev/sdb`
+
+This will build all the files, and wipe the SD card, and flash all the necessary files for all versions of the Raspberry Pi.
+
+Note - anything on the SD card will be lost.
+
 ## Building
 
 First get the ARM GNU toolchains for your target(s).  These instructions install both AArch32 and AArch64 target toolchains on x86_64:
