@@ -99,6 +99,21 @@ void Snake::updateBody()
 {
     assert(bodyLen > 0);
     int oldBodyHead = bodyHead;
+    int bodyHeadMinus2 = bodyHead - 1;
+
+    // To go back 2 from the nextHead, we need a body length of at least 2 already
+    if (bodyLen > 1)
+    {
+        if (bodyHeadMinus2 < 0)
+        {
+            bodyHeadMinus2 = SNAKE_BODY_LEN-1;
+        }
+    }
+    else
+    {
+        // Can't use 2 back from nextHead
+        bodyHeadMinus2 = -1;
+    }
 
     bodyHead++;
     if (bodyHead >= SNAKE_BODY_LEN)
@@ -126,11 +141,157 @@ void Snake::updateBody()
         }
     }
 
-    // TODO
-    // Use the nextHead and nextDirection to figure out how to modify the old head
+    // Figure out if oldBodyhead is left, right, up or down of nextHead
+    Direction oldHead;
+    if (bodyPart[oldBodyHead].pos.x < bodyPart[bodyHead].pos.x)
+    {
+        oldHead = LEFT;
+    }
+    else if (bodyPart[oldBodyHead].pos.y < bodyPart[bodyHead].pos.y)
+    {
+        oldHead = UP;
+    }
+    else if (bodyPart[oldBodyHead].pos.y > bodyPart[bodyHead].pos.y)
+    {
+        oldHead = DOWN;
+    }
+    else if (bodyPart[oldBodyHead].pos.x > bodyPart[bodyHead].pos.x)
+    {
+        oldHead = RIGHT;
+    }
+    {
+        assert(false);
+    }
 
-    // Change the old head to be a body part
-    bodyPart[oldBodyHead].bodyChar.set(sc_snake_body, colour);
+    // And figure out where the body was before then
+    Direction headMinus2;
+    if (bodyHeadMinus2 >= 0)
+    {
+        if (bodyPart[bodyHeadMinus2].pos.x < bodyPart[oldBodyHead].pos.x)
+        {
+            headMinus2 = LEFT;
+        }
+        else if (bodyPart[bodyHeadMinus2].pos.y < bodyPart[oldBodyHead].pos.y)
+        {
+            headMinus2 = UP;
+        }
+        else if (bodyPart[bodyHeadMinus2].pos.y > bodyPart[oldBodyHead].pos.y)
+        {
+            headMinus2 = DOWN;
+        }
+        else if (bodyPart[bodyHeadMinus2].pos.x > bodyPart[oldBodyHead].pos.x)
+        {
+            headMinus2 = RIGHT;
+        }
+        {
+            assert(false);
+        }
+    }
+
+    // Now we have what we need to figure out body part before the head
+    const unsigned char *newBodyPart;
+    switch (oldHead)
+    {
+        case LEFT:
+            newBodyPart = CHAR_SNAKE_BODY_HORIZONTAL;
+            if (bodyHeadMinus2 >= 0)
+            {
+                switch (headMinus2)
+                {
+                    case LEFT:
+                        break;
+                    case RIGHT:
+                        newBodyPart = CHAR_SNAKE_BODY_DBL_RIGHT;
+                        break;
+                    case UP:
+                        newBodyPart = CHAR_SNAKE_BODY_R_U;
+                        break;
+                    case DOWN:
+                        newBodyPart = CHAR_SNAKE_BODY_R_D;
+                        break;
+                    default:
+                        assert(false);
+                        break;
+                }
+            }
+            break;
+        case RIGHT:
+            newBodyPart = CHAR_SNAKE_BODY_HORIZONTAL;
+            if (bodyHeadMinus2 >= 0)
+            {
+                switch (headMinus2)
+                {
+                    case LEFT:
+                        newBodyPart = CHAR_SNAKE_BODY_DBL_LEFT;
+                        break;
+                    case RIGHT:
+                        break;
+                    case UP:
+                        newBodyPart = CHAR_SNAKE_BODY_L_U;
+                        break;
+                    case DOWN:
+                        newBodyPart = CHAR_SNAKE_BODY_L_D;
+                        break;
+                    default:
+                        assert(false);
+                        break;
+                }
+            }
+            break;
+        case UP:
+            newBodyPart = CHAR_SNAKE_BODY_VERTICAL;
+            if (bodyHeadMinus2 >= 0)
+            {
+                switch (headMinus2)
+                {
+                    case LEFT:
+                        newBodyPart = CHAR_SNAKE_BODY_R_U;
+                        break;
+                    case RIGHT:
+                        newBodyPart = CHAR_SNAKE_BODY_L_U;
+                        break;
+                    case UP:
+                        break;
+                    case DOWN:
+                        newBodyPart = CHAR_SNAKE_BODY_DBL_DOWN;
+                        break;
+                    default:
+                        assert(false);
+                        break;
+                }
+            }
+            break;
+        case DOWN:
+            newBodyPart = CHAR_SNAKE_BODY_VERTICAL;
+            if (bodyHeadMinus2 >= 0)
+            {
+                switch (headMinus2)
+                {
+                    case LEFT:
+                        newBodyPart = CHAR_SNAKE_BODY_R_D;
+                        break;
+                    case RIGHT:
+                        newBodyPart = CHAR_SNAKE_BODY_L_D;
+                        break;
+                    case UP:
+                        newBodyPart = CHAR_SNAKE_BODY_DBL_UP;
+                        break;
+                    case DOWN:
+                        break;
+                    default:
+                        assert(false);
+                        break;
+                }
+            }
+            break;
+        default:
+            assert(false);
+            break;
+    }
+
+    // Change the old head to be the corret body part105
+    ScreenChar scNewBodyPart = {newBodyPart, colour};
+    bodyPart[oldBodyHead].bodyChar.set(scNewBodyPart);
     changeCell(bodyPart[oldBodyHead].pos, bodyPart[oldBodyHead].bodyChar);
 
     // Figure out next head
