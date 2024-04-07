@@ -159,6 +159,7 @@ void Snake::updateBody()
     {
         oldHead = RIGHT;
     }
+    else
     {
         assert(false);
     }
