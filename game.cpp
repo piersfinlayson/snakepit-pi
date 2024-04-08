@@ -365,6 +365,7 @@ void Game::draw_char(const unsigned char *contents,
                      unsigned int screen_col_offset,
                      unsigned int screen_row_offset)
 {
+    # Map to TScreenColor (used by circl)
     TScreenColor screen_colour;
     switch (colour)
     {
@@ -397,10 +398,14 @@ void Game::draw_char(const unsigned char *contents,
             screen_colour = RED_COLOR;
             break;
         default:
+            // This is a shade of white
             screen_colour = NORMAL_COLOR;
             break;
     }
 
+    // Strictly the original VIC-20 version seemed to draw from the bottom
+    // row upwards.  To do that we'd need to change yy to go backwards from
+    // CHAR_SIZE-1 to 0, and start at contents+7
     for (int yy = 0; yy < CHAR_SIZE; yy++)
     {
         unsigned char mask = 0x80;
