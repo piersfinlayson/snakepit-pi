@@ -365,7 +365,7 @@ void Game::draw_char(const unsigned char *contents,
                      unsigned int screen_col_offset,
                      unsigned int screen_row_offset)
 {
-    # Map to TScreenColor (used by circl)
+    // Map to TScreenColor (used by circle)
     TScreenColor screen_colour;
     switch (colour)
     {
